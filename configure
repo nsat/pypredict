@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Script to configure, compile, and install PREDICT.
+# Give an argument to this script if you wish to override
+# the default installation directory of /usr/local/bin.
+# ie: ./configure /usr/bin
+#
+whoiam=`whoami`
+if [ $whoiam != "root" ]; then
+	echo "Sorry $whoiam.  You need to be 'root' to install PREDICT.  :-("
+else
+	echo -n "One moment please... "
+	oldterm=$TERM
+	export TERM=linux
+	cc -Wall -s installer.c -lncurses -o installer
+	if [ -a installer ]; then
+		if [ $# == "0" ]; then
+			./installer
+		else
+			./installer $1
+		fi
+	else
+		echo "Compilation failed.  Are you sure you have a C compiler (gcc) installed?"
+	fi
+	export TERM=$oldterm
+fi
