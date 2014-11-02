@@ -5775,43 +5775,6 @@ void ProgramInfo()
 	AnyKey();
 }
 
-void NewUser()
-{
-	int *mkdir();
-
-	Banner();
-	attrset(COLOR_PAIR(3)|A_BOLD);
-
-	mvprintw(12,2,"WELCOME to PREDICT!  Since you are a new user to the program, default\n");
-	printw("  orbital data and ground station location information was copied into\n");
-	printw("  your home directory to get you going.  Please select option [G] from\n");
-	printw("  PREDICT's main menu to edit your ground station information, and update\n");
-	printw("  your orbital database using option [U] or [E].  Enjoy the program!  :-)");
-	refresh();
-
-	/* Make "~/.predict" subdirectory */
-
-	sprintf(temp,"%s/.predict",getenv("HOME"));
-	mkdir(temp,0777);
-
-	/* Copy default files into ~/.predict directory */
-
-	sprintf(temp,"%sdefault/predict.tle",predictpath);
-
-	CopyFile(temp,tlefile);
-
-	sprintf(temp,"%sdefault/predict.db",predictpath);
-
-	CopyFile(temp,dbfile);
-
-	sprintf(temp,"%sdefault/predict.qth",predictpath);
-
-	CopyFile(temp,qthfile);
-
-	attrset(COLOR_PAIR(4)|A_BOLD);
-	AnyKey();
-}
-
 void db_edit()
 {
 	clear();
@@ -6201,27 +6164,6 @@ char argc, *argv[];
 	else
 		interactive=1;
 
-	if (interactive)
-	{
-		sprintf(dbfile,"%s/.predict/predict.db",env);
-
-		/* If the transponder database file doesn't already
-		   exist under $HOME/.predict, and a working environment
-		   is available, place a default copy from the PREDICT
-		   distribution under $HOME/.predict. */
-
-		db=fopen(dbfile,"r");
-
-		if (db==NULL)
-		{
-			sprintf(temp,"%sdefault/predict.db",predictpath);
-			CopyFile(temp,dbfile);
-		}
-
-		else
-			fclose(db);
-	}
-
 	x=ReadDataFiles();
 
 	if (x>1)  /* TLE file was loaded successfully */
@@ -6267,22 +6209,13 @@ char argc, *argv[];
 
 	else
 	{
-		if (tle_cli[0] || qth_cli[0])
-		{
-			/* "Houston, we have a problem..." */
-
-			printf("\n%c",7);
-
-			if (x^1)
-				printf("*** ERROR!  Your QTH file \"%s\" could not be loaded!\n",qthfile);
-
-			if (x^2)
-				printf("*** ERROR!  Your TLE file \"%s\" could not be loaded!\n",tlefile);
-
-			printf("\n");
-
-			exit(-1);
-		}
+		if (x^1)
+			fprintf(stderr, "*** ERROR!  Your QTH file \"%s\" could not be loaded!\n",qthfile);
+		
+		if (x^2)
+			fprintf(stderr, "*** ERROR!  Your TLE file \"%s\" could not be loaded!\n",tlefile);
+		
+		exit(-1);
 	}
 
 	if (interactive)
@@ -6314,18 +6247,6 @@ char argc, *argv[];
 		init_pair(5,COLOR_WHITE,COLOR_RED);
 		init_pair(6,COLOR_RED,COLOR_WHITE);
 		init_pair(7,COLOR_CYAN,COLOR_RED);
-
-		if (x<3)
-		{
-			/* A problem occurred reading the
-			   default QTH and TLE files, and
-			   no -t or -q options were
-			   provided on the command-line. */
-
-			NewUser();
-			x=ReadDataFiles();
-			QthEdit();
-		}
 	}
 
 	if (x==3)
