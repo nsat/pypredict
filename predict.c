@@ -195,16 +195,26 @@ unsigned char val[256];
 /* The following variables are used by the socket server.  They
    are updated in the MultiTrack() and SingleTrack() functions. */
 
-char	visibility_array[24], tracking_mode[30];
+char tracking_mode[30];
 
-float	az_array[24], el_array[24], long_array[24], lat_array[24],
-	footprint_array[24], range_array[24], altitude_array[24],
-	velocity_array[24], eclipse_depth_array[24], phase_array[24],
-	squint_array[24];
-
-double	doppler[24], nextevent[24];
-
-long	aos_array[24], orbitnum_array[24];
+struct {
+	char visibility;
+	float az;
+	float el;
+	float lon;
+	float lat;
+	float footprint;
+	float range;
+	float altitude;
+	float velocity;
+	float eclipse_depth;
+	float phase;
+	float squint;
+	double doppler;
+	double nextevent;
+	long aos;
+	long orbitnum;
+} body[24];
 
 unsigned short portbase=0;
 
@@ -2220,10 +2230,10 @@ void socket_server(char *predict_name)
 			{
 				if ((strncmp(satname,sat[i].name,25)==0) || (atol(satname)==sat[i].catnum))
 				{
-					nxtevt=(long)rint(86400.0*(nextevent[i]+3651.0));
+					nxtevt=(long)rint(86400.0*(body[i].nextevent+3651.0));
 
 					/* Build text buffer with satellite data */
-					sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat[i].name,long_array[i],lat_array[i],az_array[i],el_array[i],nxtevt,footprint_array[i],range_array[i],altitude_array[i],velocity_array[i],orbitnum_array[i],visibility_array[i],phase_array[i],eclipse_depth_array[i],squint_array[i]);
+					sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat[i].name,body[i].lon,body[i].lat,body[i].az,body[i].el,nxtevt,body[i].footprint,body[i].range,body[i].altitude,body[i].velocity,body[i].orbitnum,body[i].visibility,body[i].phase,body[i].eclipse_depth,body[i].squint);
 
 					/* Send buffer back to the client that sent the request */
 					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
@@ -2283,7 +2293,7 @@ void socket_server(char *predict_name)
 					/* Get Normalized (100 MHz)
 					   Doppler shift for sat[i] */
 
-					sprintf(buff,"%f\n",doppler[i]);
+					sprintf(buff,"%f\n",body[i].doppler);
 
 					/* Send buffer back to client who sent request */
 					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
@@ -5430,20 +5440,20 @@ void SingleTrack(int x)
 		{
 			if (sun_ele<=-12.0 && sat_ele>=0.0)
 			{
-				visibility_array[indx]='V';
+				body[indx].visibility='V';
 			}
 			else
 			{
-				visibility_array[indx]='D';
+				body[indx].visibility='D';
 			}
 		}
 
 		else
 		{
-			visibility_array[indx]='N';
+			body[indx].visibility='N';
 		}
 
-		visibility=visibility_array[indx];
+		visibility=body[indx].visibility;
 
 		if (comsat)
 		{
@@ -5684,27 +5694,27 @@ void SingleTrack(int x)
 
 		if (socket_flag)
 		{
-			az_array[indx]=sat_azi;
-			el_array[indx]=sat_ele;
-			lat_array[indx]=sat_lat;
-			long_array[indx]=360.0-sat_lon;
-			footprint_array[indx]=fk;
-			range_array[indx]=sat_range;
-			altitude_array[indx]=sat_alt;
-			velocity_array[indx]=sat_vel;
-			orbitnum_array[indx]=rv;
-			doppler[indx]=doppler100;
-			nextevent[indx]=aoslos;
-			eclipse_depth_array[indx]=eclipse_depth/deg2rad;
-			phase_array[indx]=360.0*(phase/twopi);
+			body[indx].az=sat_azi;
+			body[indx].el=sat_ele;
+			body[indx].lat=sat_lat;
+			body[indx].lon=360.0-sat_lon;
+			body[indx].footprint=fk;
+			body[indx].range=sat_range;
+			body[indx].altitude=sat_alt;
+			body[indx].velocity=sat_vel;
+			body[indx].orbitnum=rv;
+			body[indx].doppler=doppler100;
+			body[indx].nextevent=aoslos;
+			body[indx].eclipse_depth=eclipse_depth/deg2rad;
+			body[indx].phase=360.0*(phase/twopi);
 
 			if (calc_squint)
 			{
-				squint_array[indx]=squint;
+				body[indx].squint=squint;
 			}
 			else
 			{
-				squint_array[indx]=360.0;
+				body[indx].squint=360.0;
 			}
 
 			FindSun(daynum);
@@ -5935,28 +5945,28 @@ void MultiTrack()
 
 				if (socket_flag)
 				{
-					az_array[indx]=sat_azi;
-					el_array[indx]=sat_ele;
-					lat_array[indx]=sat_lat;
-					long_array[indx]=360.0-sat_lon;
-					footprint_array[indx]=fk;
-					range_array[indx]=sat_range;
-					altitude_array[indx]=sat_alt;
-					velocity_array[indx]=sat_vel;
-					orbitnum_array[indx]=rv;
-					visibility_array[indx]=sunstat;
-					eclipse_depth_array[indx]=eclipse_depth/deg2rad;
-					phase_array[indx]=360.0*(phase/twopi);
+					body[indx].az=sat_azi;
+					body[indx].el=sat_ele;
+					body[indx].lat=sat_lat;
+					body[indx].lon=360.0-sat_lon;
+					body[indx].footprint=fk;
+					body[indx].range=sat_range;
+					body[indx].altitude=sat_alt;
+					body[indx].velocity=sat_vel;
+					body[indx].orbitnum=rv;
+					body[indx].visibility=sunstat;
+					body[indx].eclipse_depth=eclipse_depth/deg2rad;
+					body[indx].phase=360.0*(phase/twopi);
 
-					doppler[indx]=-100e06*((sat_range_rate*1000.0)/299792458.0);
+					body[indx].doppler=-100e06*((sat_range_rate*1000.0)/299792458.0);
 
 					if (calc_squint)
 					{
-						squint_array[indx]=squint;
+						body[indx].squint=squint;
 					}
 					else
 					{
-						squint_array[indx]=360.0;
+						body[indx].squint=360.0;
 					}
 
 					FindSun(daynum);
@@ -6011,12 +6021,12 @@ void MultiTrack()
 				{
 					if (ok2predict[indx])
 					{
-						nextevent[indx]=aoslos[indx];
+						body[indx].nextevent=aoslos[indx];
 					}
 
 					else
 					{
-						nextevent[indx]=-3651.0;
+						body[indx].nextevent=-3651.0;
 					}
 				}
 
@@ -6031,21 +6041,21 @@ void MultiTrack()
 
 				if (socket_flag)
 				{
-					az_array[indx]=0.0;
-					el_array[indx]=0.0;
-					lat_array[indx]=0.0;
-					long_array[indx]=0.0;
-					footprint_array[indx]=0.0;
-					range_array[indx]=0.0;
-					altitude_array[indx]=0.0;
-					velocity_array[indx]=0.0;
-					orbitnum_array[indx]=0L;
-					visibility_array[indx]='N';
-					eclipse_depth_array[indx]=0.0;
-					phase_array[indx]=0.0;
-					doppler[indx]=0.0;
-					squint_array[indx]=0.0;
-					nextevent[indx]=-3651.0;
+					body[indx].az=0.0;
+					body[indx].el=0.0;
+					body[indx].lat=0.0;
+					body[indx].lon=0.0;
+					body[indx].footprint=0.0;
+					body[indx].range=0.0;
+					body[indx].altitude=0.0;
+					body[indx].velocity=0.0;
+					body[indx].orbitnum=0L;
+					body[indx].visibility='N';
+					body[indx].eclipse_depth=0.0;
+					body[indx].phase=0.0;
+					body[indx].doppler=0.0;
+					body[indx].squint=0.0;
+					body[indx].nextevent=-3651.0;
 				}
 			}
  		}
