@@ -35,7 +35,7 @@
 #include <fcntl.h>
 #include <termios.h>
 
-#include "predict.h"
+#define VERSION "2.2.3"
 
 /* Constants used by SGP4/SDP4 code */
 
@@ -2203,7 +2203,7 @@ char *predict_name;
 		if (strncmp("GET_VERSION",buf,11)==0)
 		{
 			buff[0]=0;
-			sprintf(buff,"%s\n",version);
+			sprintf(buff,"%s\n",VERSION);
 			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
 			ok=1;
 		}
@@ -2347,7 +2347,7 @@ void Banner()
 
 	attrset(COLOR_PAIR(6)|A_REVERSE|A_BOLD);
 	mvprintw(3,18,"                                           ");
-	mvprintw(4,18,"         --== PREDICT  v%s ==--         ",version);
+	mvprintw(4,18,"         --== PREDICT  v%s ==--         ",VERSION);
 	mvprintw(5,18,"   Released by John A. Magliacane, KD2BD   ");
 	mvprintw(6,18,"                  May 2006                 ");
 	mvprintw(7,18,"                                           ");
@@ -5732,7 +5732,7 @@ void MainMenu()
 	refresh();
 
 	if (xterm)
-		fprintf(stderr,"\033]0;PREDICT: Version %s\007",version); 
+		fprintf(stderr,"\033]0;PREDICT: Version %s\007",VERSION); 
 }
 
 void ProgramInfo()
@@ -5740,7 +5740,7 @@ void ProgramInfo()
 	Banner();
 	attrset(COLOR_PAIR(3)|A_BOLD);
 
-	printw("\n\n\n\n\n\t\tPREDICT version : %s\n",version);
+	printw("\n\n\n\n\n\t\tPREDICT version : %s\n",VERSION);
 	printw("\t\tQTH file loaded : %s\n",qthfile);
 	printw("\t\tTLE file loaded : %s\n",tlefile);
 	printw("\t\tDatabase file   : ");
