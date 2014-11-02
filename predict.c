@@ -1940,8 +1940,7 @@ void Calculate_RADec(double time, vector_t *pos, vector_t *vel, geodetic_t *geod
 
 /* .... SGP4/SDP4 functions end .... */
 
-void bailout(string)
-char *string;
+void bailout(char *string)
 {
 	/* This function quits ncurses, resets and "beeps"
 	   the terminal, and displays an error message (string)
@@ -1956,9 +1955,7 @@ char *string;
 	fprintf(stderr,"*** predict: %s!\n",string);
 }
 
-void TrackDataOut(antfd, elevation, azimuth)
-int antfd;
-double elevation, azimuth;
+void TrackDataOut(int antfd, double elevation, double azimuth)
 {
 	/* This function sends Azimuth and Elevation data
 	   to an antenna tracker connected to the serial port */
@@ -2034,8 +2031,7 @@ int passivesock(char *service, char *protocol, int qlen)
 	return sd;
 }
 
-void socket_server(predict_name)
-char *predict_name;
+void socket_server(char *predict_name)
 {
 	/* This is the socket server code */
 
@@ -2360,8 +2356,7 @@ void AnyKey()
 	getch();
 }
 
-double FixAngle(x)
-double x;
+double FixAngle(double x)
 {
 	/* This function reduces angles greater than
 	   two pi by subtracting two pi from the angle */
@@ -2372,8 +2367,7 @@ double x;
 	return x;
 }
 
-double PrimeAngle(x)
-double x;
+double PrimeAngle(double x)
 {
 	/* This function is used in the FindMoon() function. */
 
@@ -2381,8 +2375,7 @@ double x;
 	return x;
 }
 
-char *SubString(string,start,end)
-char *string, start, end;
+char *SubString(char *string, char start, char end)
 {
 	/* This function returns a substring based on the starting
 	   and ending positions provided.  It is used heavily in
@@ -2406,8 +2399,7 @@ char *string, start, end;
 		return NULL;
 }
 
-void CopyString(source, destination, start, end)
-char *source, *destination, start, end;
+void CopyString(char *source, char *destination, char start, char end)
 {
 	/* This function copies elements of the string "source"
 	   bounded by "start" and "end" into the string "destination". */
@@ -2422,9 +2414,7 @@ char *source, *destination, start, end;
 		}
 }
 
-char *Abbreviate(string,n)
-char *string;
-int n;
+char *Abbreviate(char *string, int n)
 {
 	/* This function returns an abbreviated substring of the original,
 	   including a '~' character if a non-blank character is chopped
@@ -2444,8 +2434,7 @@ int n;
 	return temp;
 }
 
-char KepCheck(line1,line2)
-char *line1, *line2;
+char KepCheck(char *line1, char *line2)
 {
 	/* This function scans line 1 and line 2 of a NASA 2-Line element
 	   set and returns a 1 if the element set appears to be valid or
@@ -2482,8 +2471,7 @@ char *line1, *line2;
 	return (x ? 0 : 1);
 }
 
-void InternalUpdate(x)
-int x;
+void InternalUpdate(int x)
 {
 	/* Updates data in TLE structure based on
 	   line1 and line2 stored in structure. */
@@ -2510,8 +2498,7 @@ int x;
 	sat[x].orbitnum=atof(SubString(sat[x].line2,63,67));
 }
 
-char *noradEvalue(value)
-double value;
+char *noradEvalue(double value)
 {
 	/* Converts numeric values to E notation used in NORAD TLEs */
 
@@ -2532,8 +2519,7 @@ double value;
 	return output;
 }
 
-void Data2TLE(x)
-int x;
+void Data2TLE(int x)
 {
 	/* This function converts orbital data held in the numeric
 	   portion of the sat tle structure to ASCII TLE format,
@@ -2630,8 +2616,7 @@ int x;
 	strcpy(sat[x].line2,line2);
 }
 
-double ReadBearing(input)
-char *input;
+double ReadBearing(char *input)
 {
 	/* This function takes numeric input in the form of a character
 	   string, and returns an equivalent bearing in degrees as a
@@ -2908,9 +2893,7 @@ char ReadDataFiles()
 	return flag;
 }
 
-char CopyFile(source, destination)
-char *source;
-char *destination;
+char CopyFile(char *source, char *destination)
 {
 	/* This function copies file "source" to file "destination"
 	   in 64k chunks.  The permissions on the destination file
@@ -2992,8 +2975,7 @@ void SaveTLE()
 	fclose(fd);
 }
 
-int AutoUpdate(string)
-char *string;
+int AutoUpdate(char *string)
 {
 	/* This function updates PREDICT's orbital datafile from a NASA
 	   2-line element file either through a menu (interactive mode)
@@ -3236,8 +3218,7 @@ int Select()
 	return(key-'A');
 }
 
-long DayNum(m,d,y)
-int  m, d, y;
+long DayNum(int m, int d, int y)
 {
 	/* This function calculates the day number from m/d/y. */
 
@@ -3313,8 +3294,7 @@ double daynum;
 	return output;
 }
 
-double GetStartTime(mode)
-char mode;
+double GetStartTime(char mode)
 {
 	/* This function prompts the user for the time and date
 	   the user wishes to begin prediction calculations,
@@ -3454,8 +3434,7 @@ char mode;
 	return ((double)DayNum(mm,dd,yy)+((hr/24.0)+(min/1440.0)+(sec/86400.0)));
 }
 
-void FindMoon(daynum)
-double daynum;
+void FindMoon(double daynum)
 {
 	/* This function determines the position of the moon, including
 	   the azimuth and elevation headings, relative to the latitude
@@ -3646,8 +3625,7 @@ double daynum;
 		moon_gha+=360.0;
 }
 
-void FindSun(daynum)
-double daynum;
+void FindSun(double daynum)
 {
 	/* This function finds the position of the Sun */
 
@@ -3686,8 +3664,7 @@ double daynum;
 	sun_dec=Degrees(solar_rad.y);
 }
 
-void PreCalc(x)
-int x;
+void PreCalc(int x)
 {
 	/* This function copies TLE data from PREDICT's sat structure
 	   to the SGP4/SDP4's single dimensioned tle structure, and
@@ -3850,8 +3827,7 @@ void Calc()
 		findsun=' ';
 }
 
-char AosHappens(x)
-int x;
+char AosHappens(int x)
 {
 	/* This function returns a 1 if the satellite pointed to by
 	   "x" can ever rise above the horizon of the ground station. */
@@ -3877,9 +3853,7 @@ int x;
 	}
 }
 
-char Decayed(x,time)
-int x;
-double time;
+char Decayed(int x, double time)
 {
 	/* This function returns a 1 if it appears that the
 	   satellite pointed to by 'x' has decayed at the
@@ -3899,8 +3873,7 @@ double time;
 		return 0;
 }
 
-char Geostationary(x)
-int x;
+char Geostationary(int x)
 {
 	/* This function returns a 1 if the satellite pointed
 	   to by "x" appears to be in a geostationary orbit */
@@ -3997,8 +3970,7 @@ double NextAOS()
 	return (FindAOS());
 }
 
-int Print(string,mode)
-char *string, mode;
+int Print(char *string, char mode)
 {
 	/* This function buffers and displays orbital predictions
 	   and allows screens to be saved to a disk file. */
@@ -4175,8 +4147,7 @@ char *string, mode;
 	return (quit);
 }
 
-int PrintVisible(string)
-char *string;
+int PrintVisible(char *string)
 {
 	/* This function acts as a filter to display passes that could
 	   possibly be optically visible to the ground station.  It works
@@ -4246,8 +4217,7 @@ char *string;
 	return quit;
 }
 
-void Predict(mode)
-char mode;
+void Predict(char mode)
 {
 	/* This function predicts satellite passes.  It displays
 	   output through the Print() function if mode=='p' (show
@@ -4526,8 +4496,7 @@ void PredictSun()
 	} while (quit==0);
 }
 
-char KbEdit(x,y)
-int x,y;
+char KbEdit(int x, int y)
 {
 	/* This function is used when editing QTH
 	   and orbital data via the keyboard. */
@@ -4876,8 +4845,7 @@ void QthEdit()
 	}
 }
 
-void SingleTrack(x)
-int x;
+void SingleTrack(int x)
 {
 	/* This function tracks a single satellite in real-time
 	   until 'Q' or ESC is pressed.  x represents the index
@@ -5787,8 +5755,7 @@ void db_edit()
 	AnyKey();
 }
 
-int QuickFind(string, outputfile)
-char *string, *outputfile;
+int QuickFind(char *string, char *outputfile)
 {
 	int x, y, z, step=1;
 	long start, now, end, count;
@@ -5908,8 +5875,7 @@ char *string, *outputfile;
 	return 0;
 }
 
-int QuickPredict(string, outputfile)
-char *string, *outputfile;
+int QuickPredict(char *string, char *outputfile)
 {
 	int x, y, z, lastel=0;
 	long start, now;
@@ -5993,8 +5959,7 @@ char *string, *outputfile;
 	return 0;
 }
 
-int main(argc,argv)
-char argc, *argv[];
+int main(char argc, char *argv[])
 {
 	int x, y, z, key=0;
 	char updatefile[80], quickfind=0, quickpredict=0,
