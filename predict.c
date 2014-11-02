@@ -119,6 +119,14 @@
 #define VISIBLE_FLAG           0x002000
 #define SAT_ECLIPSED_FLAG      0x004000
 
+/*
+  TODO: This is a refactoring hack to ensure we get consistent before/after
+        tests.  Freezes the clock to a specified time, making calculations 
+        deterministic. (remove when finished along with (2) call sites)
+*/
+char debug_freeze_time = 0;
+struct tm debug_frozen_tm = { tm_year: 114, tm_mon: 10, tm_mday: 2 };
+
 struct	{  char line1[70];
 	   char line2[70];
 	   char name[25];
@@ -1940,6 +1948,17 @@ void Calculate_RADec(double time, vector_t *pos, vector_t *vel, geodetic_t *geod
 
 /* .... SGP4/SDP4 functions end .... */
 
+time_t CurrentTime()
+{
+	//TODO: Refactoring Hack (remove)
+	if (debug_freeze_time) {
+		time_t debug_frozen_time = mktime(&debug_frozen_tm);
+		return debug_frozen_time;
+	}
+
+	return time(NULL);
+}
+
 void bailout(char *string)
 {
 	/* This function quits ncurses, resets and "beeps"
@@ -2215,7 +2234,7 @@ void socket_server(char *predict_name)
 		if (strncmp("GET_TIME$",buf,9)==0)
 		{
 			buff[0]=0;
-			t=time(NULL);
+			t=CurrentTime();
 			sprintf(buff,"%s",asctime(gmtime(&t)));
 
 			if (buff[8]==32)
@@ -2229,7 +2248,7 @@ void socket_server(char *predict_name)
 		if (strncmp("GET_TIME",buf,8)==0)
 		{
 			buff[0]=0;
-			t=time(NULL);
+			t=CurrentTime();
 			sprintf(buff,"%lu\n",(unsigned long)t);
 			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
 			ok=1;
@@ -3245,6 +3264,12 @@ double CurrentDaynum()
 {
 	/* Read the system clock and return the number
 	   of days since 31Dec79 00:00:00 UTC (daynum 0) */
+
+	//TODO: Refactoring Hack (remove)
+	if (debug_freeze_time) {
+		time_t debug_frozen_time = mktime(&debug_frozen_tm);
+		return ((((double)debug_frozen_time)/86400.0) - 3651.0);
+	}
 
 	int x;
 	struct timeval tptr;
@@ -4860,7 +4885,9 @@ void SingleTrack(int x)
 		downlink=0.0, uplink=0.0, downlink_start=0.0,
 		downlink_end=0.0, uplink_start=0.0, uplink_end=0.0,
 		dopp, doppler100=0.0, delay, loss, shift;
-	long	newtime, lasttime=0;
+
+	char	lasttime_set = 0;
+	time_t	newtime, lasttime;
 
 	PreCalc(x);
 	indx=x;
@@ -5115,7 +5142,7 @@ void SingleTrack(int x)
 
 		if (sat_ele>=0.0 && antfd!=-1)
 		{
-			newtime=(long)time(NULL);
+			newtime=CurrentTime();
 
 			if ((oldel!=iel || oldaz!=iaz) || (once_per_second && newtime>lasttime))
 			{
@@ -5811,7 +5838,7 @@ int QuickFind(char *string, char *outputfile)
 
 			indx=z;
 
-			t=time(NULL);
+			t=CurrentTime();
 			now=(long)t;
 
 			if (start==0)
@@ -5913,7 +5940,7 @@ int QuickPredict(char *string, char *outputfile)
 			start=atol(startstr);
 			indx=z;
 
-			t=time(NULL);
+			t=CurrentTime();
 			now=(long)t;
 
 			if (start==0)
@@ -6101,6 +6128,12 @@ int main(char argc, char *argv[])
 
 		if (strcmp(argv[x],"-east")==0)
 			io_lon='E';
+
+		// HACK: This is a convenience function for refactoring
+		if (strcmp(argv[x],"--freeze-time")==0)
+		{
+			debug_freeze_time = 1;
+		}
 	}
 
 	/* We're done scanning command-line arguments */
