@@ -330,7 +330,6 @@ double ArcSin(double arg)
 		return(Sign(arg)*pio2);
 	}
 	else
-
 	{
 	return(atan(arg/sqrt(1.0-arg*arg)));
 	}
@@ -752,11 +751,10 @@ int Sat_Eclipsed(vector_t *pos, vector_t *sol, double *depth)
 	{
 		return 0;
 	}
-	else
-		if (*depth>=0)
-		{
-			return 1;
-		}
+	else if (*depth>=0)
+	{
+		return 1;
+	}
 	else
 	{
 		return 0;
@@ -1594,14 +1592,14 @@ void Deep(int ientry, tle_t * tle, deep_arg_t * deep_arg)
 		
 			if (fabs(xnoh-deep_arg->xnode)>pi)
 			{
-			      if (deep_arg->xnode<xnoh)
-					{
-				  deep_arg->xnode+=twopi;
-					}
-			      else
-			      {
-				  deep_arg->xnode-=twopi;
-					}
+				if (deep_arg->xnode<xnoh)
+				{
+					deep_arg->xnode+=twopi;
+				}
+				else
+				{
+					deep_arg->xnode-=twopi;
+				}
 			}
 
 			deep_arg->xll=deep_arg->xll+pl;
@@ -2059,7 +2057,8 @@ void Calculate_RADec(double time, vector_t *pos, vector_t *vel, geodetic_t *geod
 time_t CurrentTime()
 {
 	//TODO: Refactoring Hack (remove)
-	if (debug_freeze_time) {
+	if (debug_freeze_time)
+	{
 		time_t debug_frozen_time = mktime(&debug_frozen_tm);
 		return debug_frozen_time;
 	}
@@ -3472,7 +3471,8 @@ double CurrentDaynum()
 	   of days since 31Dec79 00:00:00 UTC (daynum 0) */
 
 	//TODO: Refactoring Hack (remove)
-	if (debug_freeze_time) {
+	if (debug_freeze_time)
+	{
 		time_t debug_frozen_time = mktime(&debug_frozen_tm);
 		return ((((double)debug_frozen_time)/86400.0) - 3651.0);
 	}
@@ -3626,7 +3626,7 @@ double GetStartTime(char mode)
 		/* Seconds */
 		good = (good && isdigit(line[14]) && isdigit(line[15])) ? 1 : 0;
 
-	     	if (good)
+		if (good)
 		{ 
 			/* Decode Day */
 			dd=10*(line[0]-'0')+line[1]-'0';
@@ -4174,7 +4174,6 @@ char Geostationary(int x)
 	   to by "x" appears to be in a geostationary orbit */
 
 	if (fabs(sat[x].meanmo-1.0027)<0.0002) 
-
 	{
 		return 1;
 	}
@@ -4311,11 +4310,9 @@ int Print(char *string, char mode)
 		}
 	
 		if (mode=='m' || mode=='o')
-
 		{
 			sprintf(head2,"\n\t   Date     Time    El   Az   RA     Dec    GHA     Vel   Range\n");
 		}
-
 
 		if (mode=='p')
 		{
@@ -4354,12 +4351,10 @@ int Print(char *string, char mode)
 			else
 			{
 				if (calc_squint)
-
 				{
 					sprintf(head2,"\n\t   Date     Time    El   Az  Phase  %s   %s    Range  Squint\n",(io_lat=='N'?"LatN":"LatS"),(io_lon=='W'?"LonW":"LonE"));
 				}
 				else
-
 				{
 					sprintf(head2,"\n\t   Date     Time    El   Az  Phase  %s   %s    Range  Orbit\n",(io_lat=='N'?"LatN":"LatS"),(io_lon=='W'?"LonW":"LonE"));
 				}
@@ -4599,7 +4594,6 @@ void Predict(char mode)
 			while (iel>=0 && quit==0)
 			{
 				if (calc_squint)
-
 				{
 					sprintf(string,"      %s%4d %4d  %4d  %4d   %4d   %6ld  %4.0f %c\n",Daynum2String(daynum),iel,iaz,ma256,(io_lat=='N'?+1:-1)*isplat,(io_lon=='W'?isplong:360-isplong),irk,squint,findsun);
 				}
