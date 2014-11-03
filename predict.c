@@ -2729,25 +2729,19 @@ void SaveQTH()
 
 void SaveTLE()
 {
-	int x;
 	FILE *fd;
 
  	/* Save orbital data to tlefile */
 
 	fd=fopen(tlefile,"w");
 
-	for (x=0; x<24; x++)
-	{
-		/* Convert numeric orbital data to ASCII TLE format */
+	Data2TLE(0);
 
-		Data2TLE(x);
+	/* Write name, line1, line2 to predict.tle */
 
-		/* Write name, line1, line2 to predict.tle */
-
-		fprintf(fd,"%s\n", sat.name);  
-		fprintf(fd,"%s\n", sat.line1);
-		fprintf(fd,"%s\n", sat.line2);
-	}
+	fprintf(fd,"%s\n", sat.name);  
+	fprintf(fd,"%s\n", sat.line1);
+	fprintf(fd,"%s\n", sat.line2);
 
 	fclose(fd);
 }
@@ -4459,7 +4453,7 @@ void ShowOrbitData()
 	double an_period, no_period, sma, c1, e2, satepoch;
 	char days[5];
 
-	x=Select();
+	x=0;
 
 	while (x!=-1)
 	{
@@ -5739,7 +5733,7 @@ int main(char argc, char *argv[])
 				case 'v':
 					Print("",0);
 					PrintVisible("");
-					indx=Select();
+					indx=0;
 
 					if (indx!=-1 && sat.meanmo!=0.0 && Decayed(indx,0.0)==0)
 					{
@@ -5773,7 +5767,7 @@ int main(char argc, char *argv[])
 
 				case 't':
 				case 'T':
-					indx=Select();
+					indx=0;
 
 					if (indx!=-1 && sat.meanmo!=0.0 && Decayed(indx,0.0)==0)
 					{
@@ -5789,7 +5783,7 @@ int main(char argc, char *argv[])
 					break;
 
 				case 's':
-					indx=Select();
+					indx=0;
 					if (indx!=-1 && sat.meanmo!=0.0 && Decayed(indx,0.0)==0)
 					{
 						Print("",0);
