@@ -2209,7 +2209,6 @@ void socket_server(char *predict_name)
 		}
 
 		buf[n]=0;
-		ok=0;
 
 		/* Parse the command in the datagram */
 		if (strncmp("GET_SAT",buf,7)==0)
@@ -2234,16 +2233,11 @@ void socket_server(char *predict_name)
 
 					/* Build text buffer with satellite data */
 					sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat.name,body.lon,body.lat,body.az,body.el,nxtevt,body.footprint,body.range,body.altitude,body.velocity,body.orbitnum,body.visibility,body.phase,body.eclipse_depth,body.squint);
-
-					/* Send buffer back to the client that sent the request */
-					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
-					ok=1;
-					break;
 				}
 			}
 		}
 
-		if (strncmp("GET_TLE",buf,7)==0)
+		else if (strncmp("GET_TLE",buf,7)==0)
 		{
 			/* Parse "buf" for satellite name */
 			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
@@ -2264,15 +2258,11 @@ void socket_server(char *predict_name)
 					/* Build text buffer with satellite data */
 
 					sprintf(buff,"%s\n%s\n%s\n",sat.name,sat.line1, sat.line2);
-					/* Send buffer back to the client that sent the request */
-					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
-					ok=1;
-					break;
 				}
 			}
 		}
 
-		if (strncmp("GET_DOPPLER",buf,11)==0)
+		else if (strncmp("GET_DOPPLER",buf,11)==0)
 		{
 			/* Parse "buf" for satellite name */
 			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
@@ -2294,16 +2284,11 @@ void socket_server(char *predict_name)
 					   Doppler shift for sat */
 
 					sprintf(buff,"%f\n",body.doppler);
-
-					/* Send buffer back to client who sent request */
-					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
-					ok=1;
-					break;
 				}
 			}
 		}
 
-		if (strncmp("GET_LIST",buf,8)==0)
+		else if (strncmp("GET_LIST",buf,8)==0)
 		{
 			buff[0]=0;
 
@@ -2316,59 +2301,44 @@ void socket_server(char *predict_name)
 
 				strcat(buff,"\n");
 			}
-
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (strncmp("RELOAD_TLE",buf,10)==0)
+		else if (strncmp("RELOAD_TLE",buf,10)==0)
 		{
 			buff[0]=0;
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
 			reload_tle=1;
-			ok=1;
 		}
 
-		if (strncmp("GET_SUN",buf,7)==0)
+		else if (strncmp("GET_SUN",buf,7)==0)
 		{
 			buff[0]=0;
 			sprintf(buff,"%-7.2f\n%+-6.2f\n%-7.2f\n%-7.2f\n%-7.2f\n",sun_azi, sun_ele, sun_lat, sun_lon, sun_ra);
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (strncmp("GET_MOON",buf,8)==0)
+		else if (strncmp("GET_MOON",buf,8)==0)
 		{
 			buff[0]=0;
 			sprintf(buff,"%-7.2f\n%+-6.2f\n%-7.2f\n%-7.2f\n%-7.2f\n",moon_az, moon_el, moon_dec, moon_gha, moon_ra);
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (strncmp("GET_MODE",buf,8)==0)
+		else if (strncmp("GET_MODE",buf,8)==0)
 		{
 			sprintf(buff,"%s",tracking_mode);
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (strncmp("GET_VERSION",buf,11)==0)
+		else if (strncmp("GET_VERSION",buf,11)==0)
 		{
 			buff[0]=0;
 			sprintf(buff,"%s\n",VERSION);
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (strncmp("GET_QTH",buf,7)==0)
+		else if (strncmp("GET_QTH",buf,7)==0)
 		{
 			buff[0]=0;
 			sprintf(buff,"%s\n%g\n%g\n%d\n",qth.callsign, qth.stnlat, qth.stnlong, qth.stnalt);
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (strncmp("GET_TIME$",buf,9)==0)
+		else if (strncmp("GET_TIME$",buf,9)==0)
 		{
 			buff[0]=0;
 			t=CurrentTime();
@@ -2378,25 +2348,23 @@ void socket_server(char *predict_name)
 			{
 				buff[8]='0';
 			}
-
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
 			buf[0]=0;
-			ok=1;
 		}
 
-		if (strncmp("GET_TIME",buf,8)==0)
+		else if (strncmp("GET_TIME",buf,8)==0)
 		{
 			buff[0]=0;
 			t=CurrentTime();
 			sprintf(buff,"%lu\n",(unsigned long)t);
-			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
 		}
 
-		if (ok==0)
+		else
 		{
-			sendto(sock,"Huh?\n",5,0,(struct sockaddr *)&fsin,sizeof(fsin));
+			sprintf(buff,"%s\n","Huh?\n");
 		}
+
+		/* Send buffer back to the client that sent the request */
+		sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
 	} 	
 }
 
