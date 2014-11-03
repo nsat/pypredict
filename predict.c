@@ -4594,6 +4594,7 @@ void MakeObservation(double obs_time) {
     //printw(17+bshift,1,"-------------   -------------   -------------   ------------      ------------");
 
     // Display
+    printf("NORAD_ID        %d\n",  sat.catnum);
     printf("Name            %s\n",  sat.name);
     printf("Date(epoch)     %f\n",  (daynum+3651.0)*(86400.0)); //See daynum=((start/86400.0)-3651.0);
     printf("Date(ASCII)     %s\n",  Daynum2String(daynum));
