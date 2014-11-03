@@ -123,6 +123,33 @@
 char debug_freeze_time = 0;
 struct tm debug_frozen_tm = { tm_year: 114, tm_mon: 10, tm_mday: 2 };
 
+// This struct represents an observation of a particular satellite
+// from a particular reference point (on earth) at a particular time
+// and is used primarily in the PyPredict code.
+typedef struct observation {
+	double epoch;
+	char orbital_model[5];
+	long norad_id;
+	char name[25];;
+	double latitude;
+	double longitude;
+	double altitude;
+	double orbital_velocity;
+	double footprint;
+	double eclipse_depth;
+	double orbital_phase;
+	char sunlit;
+	long orbit;
+	char geostationary;
+	double azimuth;
+	double elevation;
+	double slant_range;
+	char visibility;
+	char has_aos;
+	char decayed;
+	double doppler;
+} observation;
+
 struct	{
 	   char line1[70];       // First line of TLE
 	   char line2[70];       // Second line of TLE
@@ -4545,7 +4572,7 @@ void ShowOrbitData()
 //       is convoluted and it's never come up in our usage.  FYI, the 'Edit Transponder Database'
 //       menu option is still marked "coming soon" :).  We'll add it back if there's demand.
 //
-void MakeObservation(double obs_time) {
+void MakeObservation(double obs_time, struct observation * obs) {
     char geostationary=0, aoshappens=0, decayed=0, visibility=0, sunlit;
     double doppler100=0.0, delay;
 
@@ -4593,31 +4620,51 @@ void MakeObservation(double obs_time) {
     //printw(16+bshift,1,"Eclipse Depth   Orbital Phase   Orbital Model   Squint Angle      AutoTracking");
     //printw(17+bshift,1,"-------------   -------------   -------------   ------------      ------------");
 
+    obs->norad_id = sat.catnum;
+    //obs->name = sat.name;
+    obs->epoch = (daynum+3651.0)*(86400.0); //See daynum=((start/86400.0)-3651.0);
+    obs->latitude = (io_lat=='N'?+1:-1)*sat_lat;
+    obs->longitude = (io_lon=='W'?360.0-sat_lon:sat_lon);
+    obs->azimuth = sat_azi;
+    obs->elevation = sat_ele;
+    obs->orbital_velocity = 3600.0*sat_vel;
+    obs->footprint = fk;
+    obs->altitude = sat_alt;
+    obs->slant_range = sat_range;
+    obs->eclipse_depth = eclipse_depth/deg2rad;
+    obs->orbital_phase = 256.0*(phase/twopi);
+    //obs->orbital_model = ephem
+    obs->visibility = visibility;
+    obs->sunlit = sunlit;
+    obs->orbit = rv;
+    obs->geostationary = geostationary;
+    obs->has_aos = aoshappens;
+    obs->decayed = decayed;
+    obs->doppler = doppler100;
+
     // Display
-    printf("NORAD_ID        %d\n",  sat.catnum);
-    printf("Name            %s\n",  sat.name);
-    printf("Date(epoch)     %f\n",  (daynum+3651.0)*(86400.0)); //See daynum=((start/86400.0)-3651.0);
-    printf("Date(ASCII)     %s\n",  Daynum2String(daynum));
-    printf("Latitude(N)     %f\n",  (io_lat=='N'?+1:-1)*sat_lat);
-    printf("Longitude(E)    %f\n",  (io_lon=='W'?360.0-sat_lon:sat_lon));
-    printf("Azimuth         %f\n",  sat_azi);
-    printf("Elevation       %f\n",  sat_ele);
-    printf("Velocity        %f\n",  3600.0*sat_vel);
-    printf("Footprint       %f\n",  fk);
-    printf("Altitude(km)    %f\n",  sat_alt);
-    printf("Slant_Range(km) %f\n",  sat_range);
-    printf("Eclipse_Depth   %f\n",  eclipse_depth/deg2rad);
-    printf("Orbital_Phase   %f\n",  256.0*(phase/twopi));
-    printf("Orbital_Model   %s\n",  ephem);
-    printf("Visibility      %c\n",  visibility);
-    printf("Sunlight        %d\n",  sunlit);
-    printf("Orbit_Number    %ld\n", rv);
-    //TODO: We're not supporting rotor tracking
-    printf("Geostationary   %d\n",  geostationary);
-    printf("AOS_Happens     %d\n",  aoshappens);
-    printf("Decayed         %d\n",  decayed);
-    printf("Doppler         %f\n",  doppler100);
-    //TODO: AOS and LOS, as conditional occurrences, belong to QuickPredict
+    printf("NORAD_ID        %d\n", obs->norad_id);
+    //printf("Name            %s\n", obs->name);
+    printf("Date(epoch)     %f\n", obs->epoch);
+    printf("Latitude(N)     %f\n", obs->latitude);
+    printf("Longitude(E)    %f\n", obs->longitude);
+    printf("Azimuth         %f\n", obs->azimuth);
+    printf("Elevation       %f\n", obs->elevation);
+    printf("Velocity        %f\n", obs->orbital_velocity);
+    printf("Footprint       %f\n", obs->footprint);
+    printf("Altitude(km)    %f\n", obs->altitude);
+    printf("Slant_Range(km) %f\n", obs->slant_range);
+    printf("Eclipse_Depth   %f\n", obs->eclipse_depth);
+    printf("Orbital_Phase   %f\n", obs->orbital_phase);
+    //printf("Orbital_Model   %s\n", obs->orbital_model);
+    printf("Visibility      %c\n", obs->visibility);
+    printf("Sunlight        %d\n", obs->sunlit);
+    printf("Orbit_Number    %ld\n",obs->orbit);
+    printf("Geostationary   %d\n", obs->geostationary);
+    printf("AOS_Happens     %d\n", obs->has_aos);
+    printf("Decayed         %d\n", obs->decayed);
+    printf("Doppler         %f\n", obs->doppler);
+
 }
 
 void SingleTrack(int x)
@@ -5736,7 +5783,8 @@ int main(char argc, char *argv[])
 	{
 		if (quickfind)  /* -f was passed to PREDICT */
 		{
-			MakeObservation(CurrentDaynum());
+			observation now = { 0 };
+			MakeObservation(CurrentDaynum(), &now);
 			exit(QuickFind(quickstring,outputfile));
 		}
 
