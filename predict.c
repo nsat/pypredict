@@ -2213,94 +2213,36 @@ void socket_server(char *predict_name)
 		/* Parse the command in the datagram */
 		if (strncmp("GET_SAT",buf,7)==0)
 		{
-			/* Parse "buf" for satellite name */
-			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
+			nxtevt=(long)rint(86400.0*(body.nextevent+3651.0));
 
-			for (j=++i; buf[j]!='\n' && buf[j]!=0 && (j-i)<25; j++)
-			{
-				satname[j-i]=buf[j];
-			}
-
-			satname[j-i]=0;
-
-			/* Do a simple search for the matching satellite name */
-
-			for (i=0; i<24; i++)
-			{
-				if ((strncmp(satname,sat.name,25)==0) || (atol(satname)==sat.catnum))
-				{
-					nxtevt=(long)rint(86400.0*(body.nextevent+3651.0));
-
-					/* Build text buffer with satellite data */
-					sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat.name,body.lon,body.lat,body.az,body.el,nxtevt,body.footprint,body.range,body.altitude,body.velocity,body.orbitnum,body.visibility,body.phase,body.eclipse_depth,body.squint);
-				}
-			}
+			/* Build text buffer with satellite data */
+			sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat.name,body.lon,body.lat,body.az,body.el,nxtevt,body.footprint,body.range,body.altitude,body.velocity,body.orbitnum,body.visibility,body.phase,body.eclipse_depth,body.squint);
 		}
 
 		else if (strncmp("GET_TLE",buf,7)==0)
 		{
-			/* Parse "buf" for satellite name */
-			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
+			/* Build text buffer with satellite data */
 
-			for (j=++i; buf[j]!='\n' && buf[j]!=0 && (j-i)<25; j++)
-			{
-				satname[j-i]=buf[j];
-			}
-
-			satname[j-i]=0;
-
-			/* Do a simple search for the matching satellite name */
-
-			for (i=0; i<24; i++)
-			{
-				if ((strncmp(satname,sat.name,25)==0) || (atol(satname)==sat.catnum))
-				{
-					/* Build text buffer with satellite data */
-
-					sprintf(buff,"%s\n%s\n%s\n",sat.name,sat.line1, sat.line2);
-				}
-			}
+			sprintf(buff,"%s\n%s\n%s\n",sat.name,sat.line1, sat.line2);
 		}
 
 		else if (strncmp("GET_DOPPLER",buf,11)==0)
 		{
-			/* Parse "buf" for satellite name */
-			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
+			/* Get Normalized (100 MHz) Doppler shift for sat */
 
-			for (j=++i; buf[j]!='\n' && buf[j]!=0 && (j-i)<25; j++)
-			{
-				satname[j-i]=buf[j];
-			}
-
-			satname[j-i]=0;
-
-			/* Do a simple search for the matching satellite name */
-
-			for (i=0; i<24; i++)
-			{
-				if ((strncmp(satname,sat.name,25)==0) || (atol(satname)==sat.catnum))
-				{
-					/* Get Normalized (100 MHz)
-					   Doppler shift for sat */
-
-					sprintf(buff,"%f\n",body.doppler);
-				}
-			}
+			sprintf(buff,"%f\n",body.doppler);
 		}
 
 		else if (strncmp("GET_LIST",buf,8)==0)
 		{
 			buff[0]=0;
 
-			for (i=0; i<24; i++)
+			if (sat.name[0]!=0)
 			{
-				if (sat.name[0]!=0)
-				{
-					strcat(buff,sat.name);
-				}
-
-				strcat(buff,"\n");
+				strcat(buff,sat.name);
 			}
+
+			strcat(buff,"\n");
 		}
 
 		else if (strncmp("RELOAD_TLE",buf,10)==0)
