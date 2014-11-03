@@ -2212,7 +2212,7 @@ void socket_server(char *predict_name)
 		ok=0;
 
 		/* Parse the command in the datagram */
-		if ((strncmp("GET_SAT",buf,7)==0) && (strncmp("GET_SAT_POS",buf,11)!=0))
+		if (strncmp("GET_SAT",buf,7)==0)
 		{
 			/* Parse "buf" for satellite name */
 			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
@@ -2390,104 +2390,6 @@ void socket_server(char *predict_name)
 			t=CurrentTime();
 			sprintf(buff,"%lu\n",(unsigned long)t);
 			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-			ok=1;
-		}
-
-		if (strncmp("GET_SAT_POS",buf,11)==0)
-		{
-			/* Parse "buf" for satellite name and arguments */
-			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
-
-			for (j=++i; buf[j]!='\n' && buf[j]!=0 && (j-i)<49; j++)
-			{
-				satname[j-i]=buf[j];
-			}
-
-			satname[j-i]=0;
-
-			/* Send request to predict with output
-			   directed to a temporary file under /tmp */
-
-			strcpy(tempname,"/tmp/XXXXXX\0");
-			i=mkstemp(tempname);
-
-			sprintf(buff,"%s -f %s -t %s -q %s -o %s\n",predict_name,satname,tlefile,qthfile,tempname);
-			system(buff);
-
-			/* Append an EOF marker (CNTRL-Z) to the end of file */
-
-			fd=fopen(tempname,"a");
-			fprintf(fd,"%c\n",26);  /* Control-Z */
-			fclose(fd);
-
-			buff[0]=0;
-
-			/* Send the file to the client */
-
-			fd=fopen(tempname,"rb");
-
-			fgets(buff,80,fd);
-
-			do
-			{
-				sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-				fgets(buff,80,fd);
-				/* usleep(2);  if needed (for flow-control) */
-
-			} while (feof(fd)==0);
-
-			fclose(fd);
-			unlink(tempname);
-			close(i);
-			ok=1;
-		}
-
-		if (strncmp("PREDICT",buf,7)==0)
-		{
-			/* Parse "buf" for satellite name and arguments */
-			for (i=0; buf[i]!=32 && buf[i]!=0 && i<39; i++);
-
-			for (j=++i; buf[j]!='\n' && buf[j]!=0 && (j-i)<49; j++)
-			{
-				satname[j-i]=buf[j];
-			}
-
-			satname[j-i]=0;
-
-			/* Send request to predict with output
-			   directed to a temporary file under /tmp */
-
-			strcpy(tempname,"/tmp/XXXXXX\0");
-			i=mkstemp(tempname);
-
-			sprintf(buff,"%s -p %s -t %s -q %s -o %s\n",predict_name, satname,tlefile,qthfile,tempname);
-			system(buff);
-
-			/* Append an EOF marker (CNTRL-Z) to the end of file */
-
-			fd=fopen(tempname,"a");
-			fprintf(fd,"%c\n",26);  /* Control-Z */
-			fclose(fd);
-
-			buff[0]=0;
-
-			/* Send the file to the client */
-
-			fd=fopen(tempname,"rb");
-
-			fgets(buff,80,fd);
-
-			do
-			{
-				sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
-				fgets(buff,80,fd);
-				/* usleep(2);  if needed (for flow-control) */
-
-			} while (feof(fd)==0);
-
-			fclose(fd);
-			unlink(tempname);
-			close(i);
 			ok=1;
 		}
 
