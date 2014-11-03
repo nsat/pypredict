@@ -128,32 +128,35 @@
 char debug_freeze_time = 0;
 struct tm debug_frozen_tm = { tm_year: 114, tm_mon: 10, tm_mday: 2 };
 
-struct	{  char line1[70];
-	   char line2[70];
-	   char name[25];
- 	   long catnum;
-	   long setnum;
-	   char designator[10];
- 	   int year;
-	   double refepoch;
-	   double incl;
-	   double raan;
-	   double eccn;
-	   double argper;
-	   double meanan;
-	   double meanmo;
-	   double drag;
-	   double nddot6;
-  	   double bstar;
-	   long orbitnum;
+struct	{
+	   char line1[70];       // First line of TLE
+	   char line2[70];       // Second line of TLE
+	   char name[25];        // Spacecraft Name
+ 	   long catnum;          // Catalog Number (a.k.a NORAD id)
+	   long setnum;          // Element Set No.
+	   char designator[10];  // Designator
+ 	   int year;             // Reference Epoch (year?) (?)
+	   double refepoch;      // Reference Epoch (?)
+	   double incl;          // Inclination
+	   double raan;          // RAAN
+	   double eccn;          // Eccentricity
+	   double argper;        // Arg of Perigee
+	   double meanan;        // Mean Anomaly
+	   double meanmo;        // Mean Motion
+	   double drag;          // Decay Rate
+	   double nddot6;        // Nddot/6
+  	   double bstar;         // Bstar Drag Term
+	   long orbitnum;        // Orbit Number
 	}  sat;
 
-struct	{  char callsign[17];
-	   double stnlat;
-	   double stnlong;
-	   int stnalt;
+struct	{
+       char callsign[17];    // Observation Position Call Sign
+	   double stnlat;        // Observation Position Latitude
+	   double stnlong;       // Observation Position Longitude
+	   int stnalt;           // Observation Position Altitude
 	}  qth;
 
+// TODO: sat_db doesn't seem to be used much.  Verify it functions and annotate.
 struct	{  char name[25];
 	   long catnum;
 	   char squintflag;
