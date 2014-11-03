@@ -2347,7 +2347,8 @@ void socket_server(char *predict_name)
 
 		if (strncmp("GET_MODE",buf,8)==0)
 		{
-			sendto(sock,tracking_mode,strlen(tracking_mode),0,(struct sockaddr *)&fsin,sizeof(fsin));
+			sprintf(buff,"%s",tracking_mode);
+			sendto(sock,buff,strlen(buff),0,(struct sockaddr *)&fsin,sizeof(fsin));
 			ok=1;
 		}
 
