@@ -4616,12 +4616,6 @@ void MakeObservation(double obs_time) {
     printf("Decayed         %d\n",  decayed);
     printf("Doppler         %f\n",  doppler100);
     //TODO: AOS and LOS, as conditional occurrences, belong to QuickPredict
-
-    printf("Sun_Azimuth     %f\n",  sun_azi);
-    printf("Sun_Elevation   %f\n",  sun_ele);
-
-    printf("Moon_Azimuth    %f\n",  moon_az);
-    printf("Moon_Elevation  %f\n",  moon_el);
 }
 
 void SingleTrack(int x)
