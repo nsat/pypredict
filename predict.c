@@ -179,11 +179,11 @@ double	tsince, jul_epoch, jul_utc, eclipse_depth=0,
 	moon_az, moon_el, moon_dx, moon_ra, moon_dec, moon_gha, moon_dv;
 
 char	qthfile[50], tlefile[50], dbfile[50], temp[80], output[25],
-	serial_port[15], resave=0, reload_tle=0,
+	resave=0, reload_tle=0,
 	once_per_second=0, ephem[5], sat_sun_status, findsun,
 	calc_squint, database=0, xterm, io_lat='N', io_lon='W';
 
-int	indx, antfd, iaz, iel, ma256, isplat, isplong, Flags=0;
+int	indx, iaz, iel, ma256, isplat, isplong, Flags=0;
 
 long	rv, irk;
 
@@ -2061,26 +2061,6 @@ void bailout(char *string)
 	refresh();
 	endwin();
 	fprintf(stderr,"*** predict: %s!\n",string);
-}
-
-void TrackDataOut(int antfd, double elevation, double azimuth)
-{
-	/* This function sends Azimuth and Elevation data
-	   to an antenna tracker connected to the serial port */
-
-	int n, port;
-	char message[30]="\n";
-
-	port=antfd;
-
-	sprintf(message, "AZ%3.1f EL%3.1f \x0D\x0A", azimuth,elevation);
-	n=write(port,message,strlen(message));
-
-	if (n<0)
-	{
-		bailout("Error Writing To Antenna Port");
-		exit(-1);
-	}
 }
 
 void Banner()
@@ -5068,21 +5048,7 @@ void SingleTrack(int x)
 			}
 		}
 
-		if (antfd!=-1)
-		{
-			if (sat_ele>=0.0)
-			{
-				mvprintw(18+bshift,67,"   Active   ");
-			}
-			else
-			{
-				mvprintw(18+bshift,67,"Standing  By");
-			}
-		}
-		else
-		{
-			mvprintw(18+bshift,67,"Not  Enabled");
-		}
+		mvprintw(18+bshift,67,"Not  Enabled");
 
 		if (calc_squint)
 		{
@@ -5196,23 +5162,6 @@ void SingleTrack(int x)
 		attrset(COLOR_PAIR(3)|A_BOLD);
 
 		mvprintw(21,22,"Orbit Number: %ld",rv);
-
-		/* Send data to serial port antenna tracker
-		   either as needed (when it changes), or
-		   once per second. */
-
-		if (sat_ele>=0.0 && antfd!=-1)
-		{
-			newtime=CurrentTime();
-
-			if ((oldel!=iel || oldaz!=iaz) || (once_per_second && newtime>lasttime))
-			{
-				TrackDataOut(antfd,(float)iel,(float)iaz);
-				oldel=iel;
-				oldaz=iaz;
-				lasttime=newtime;
-			}
-		}
 
 		mvprintw(23,22,"Spacecraft is currently ");
 
@@ -5786,22 +5735,7 @@ void ProgramInfo()
 		printw("Not loaded\n");
 	}
 
-	if (antfd!=-1)
-	{
-		printw("\t\tAutoTracking    : Sending data to %s",serial_port);
-
-		if (once_per_second)
-		{
-			printw(" every second");
-		}
-
-		printw("\n");
-	}
-
-	else
-	{
-		printw("\t\tAutoTracking    : Not enabled\n");
-	}
+	printw("\t\tAutoTracking    : Not enabled\n");
 
 	printw("\t\tRunning Mode    : ");
 
@@ -6089,8 +6023,6 @@ int main(char argc, char *argv[])
 	once_per_second=0;
 		
 	y=argc-1;
-	antfd=-1;
-
 
 	/* Scan command-line arguments */
 
@@ -6164,21 +6096,14 @@ int main(char argc, char *argv[])
 
 		if (strcmp(argv[x],"-a")==0)
 		{
-			z=x+1;
-			if (z<=y && argv[z][0] && argv[z][0]!='-')
-			{
-				strncpy(serial_port,argv[z],13);
-			}
+			fprintf(stderr, "-a flag deprecated\n");
+			exit(-1);
 		}
 
 		if (strcmp(argv[x],"-a1")==0)
 		{
-			z=x+1;
-			if (z<=y && argv[z][0] && argv[z][0]!='-')
-			{
-				strncpy(serial_port,argv[z],13);
-			}
-			once_per_second=1;
+			fprintf(stderr, "-a1 flag deprecated\n");
+			exit(-1);
 		}
 
 		if (strcmp(argv[x],"-o")==0)
@@ -6366,48 +6291,6 @@ int main(char argc, char *argv[])
 
 	if (x==3)
 	{
-		/* Open serial port to send data to
-		   the antenna tracker if present. */
-
-		if (serial_port[0]!=0)
-		{
-			/* Make sure there's no trailing '/' */
-
-			x=strlen(serial_port);
-
-			if (serial_port[x-1]=='/')
-			{
-				serial_port[x-1]=0;
-			}
-
-			antfd=open(serial_port, O_WRONLY|O_NOCTTY);
-
-			if (antfd!=-1)
-			{
-				/* Set up serial port */
-
-				tcgetattr(antfd, &oldtty);
-				memset(&newtty, 0, sizeof(newtty));
-
-				/* 9600 baud, 8-bits, no parity,
-				   1-stop bit, no handshaking */
-
-				newtty.c_cflag=B9600|CS8|CLOCAL;
-				newtty.c_iflag=IGNPAR;
-				newtty.c_oflag=0;
-				newtty.c_lflag=0;
-
-				tcflush(antfd, TCIFLUSH);
-				tcsetattr(antfd, TCSANOW, &newtty);
-			}
-
-			else
-			{
-				bailout("Unable To Open Antenna Port");
-				exit(-1);
-			}
-		}
-	
 
 		MainMenu();
 
@@ -6507,12 +6390,6 @@ int main(char argc, char *argv[])
 			}
 
 		} while (key!='q' && key!=27);
-
-		if (antfd!=-1)
-		{
-			tcsetattr(antfd,TCSANOW,&oldtty);
-			close(antfd);
-		}
 
 		curs_set(1);	
 		bkgdset(COLOR_PAIR(1));
