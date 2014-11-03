@@ -4541,7 +4541,7 @@ void ShowOrbitData()
 // NOTE: We don't support uplink, downlink, squint and related parameters.  The related code
 //       is convoluted and it's never come up in our usage.  FYI, the 'Edit Transponder Database'
 //       menu option is still marked "coming soon" :).  We'll add it back if there's demand.
-void SingleTrackExtract() {
+void SingleTrackExtract(double obs_time) {
     char geostationary=0, aoshappens=0, decayed=0, visibility=0, sunlit;
     double doppler100=0.0, delay;
 
@@ -4554,7 +4554,7 @@ void SingleTrackExtract() {
         exit(-1);
     }
 
-    daynum=CurrentDaynum();
+    daynum=obs_time;
     aoshappens=AosHappens(indx);
     geostationary=Geostationary(indx);
     decayed=Decayed(indx,0.0);
@@ -5736,7 +5736,7 @@ int main(char argc, char *argv[])
 	{
 		if (quickfind)  /* -f was passed to PREDICT */
 		{
-			SingleTrackExtract();
+			SingleTrackExtract(CurrentDaynum());
 			exit(QuickFind(quickstring,outputfile));
 		}
 
