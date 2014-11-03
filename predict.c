@@ -4596,8 +4596,8 @@ void MakeObservation(double obs_time) {
         // Display
     printf("Name            %s\n",  sat.name);
     printf("Date            %s\n",  Daynum2String(daynum));
-    printf("Latitude(%s)    %f\n",  (io_lat=='N'?"N":"S"), (io_lat=='N'?+1:-1)*sat_lat);
-    printf("Longitude(%s)   %f\n",  (io_lon=='W'?"W":"E"), (io_lon=='W'?360.0-sat_lon:sat_lon));
+    printf("Latitude(N)     %f\n",  (io_lat=='N'?+1:-1)*sat_lat);
+    printf("Longitude(E)    %f\n",  (io_lon=='W'?360.0-sat_lon:sat_lon));
     printf("Azimuth         %f\n",  sat_azi);
     printf("Elevation       %f\n",  sat_ele);
     printf("Velocity        %f\n",  3600.0*sat_vel);
