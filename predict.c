@@ -4538,6 +4538,88 @@ void ShowOrbitData()
 	 };
 }	
 
+// NOTE: We don't support uplink, downlink, squint and related parameters.  The related code
+//       is convoluted and it's never come up in our usage.  FYI, the 'Edit Transponder Database'
+//       menu option is still marked "coming soon" :).  We'll add it back if there's demand.
+void SingleTrackExtract() {
+    char geostationary=0, aoshappens=0, decayed=0, visibility=0, sunlit;
+    double doppler100=0.0, delay;
+
+    PreCalc(0);
+    indx=0;
+
+    if (sat_db.transponders>0)
+    {
+        fprintf(stderr, "ERROR: This variant of predict does not support %s definition.", dbfile);
+        exit(-1);
+    }
+
+    daynum=CurrentDaynum();
+    aoshappens=AosHappens(indx);
+    geostationary=Geostationary(indx);
+    decayed=Decayed(indx,0.0);
+
+    //Calcs
+    Calc();
+    fk=12756.33*acos(xkmper/(xkmper+sat_alt));
+
+    if (sat_sun_status)
+    {
+        if (sun_ele<=-12.0 && sat_ele>=0.0) {
+            visibility='V';
+        } else {
+            visibility='D';
+        }
+    } else {
+        visibility='N';
+    }
+    // gathering power seems much more useful than naked-eye visibility
+    sunlit = (visibility=='D' || visibility=='V');
+
+    doppler100=-100.0e06*((sat_range_rate*1000.0)/299792458.0);
+    delay=1000.0*((1000.0*sat_range)/299792458.0);
+
+    //TODO: Seems like FindSun(daynum) should go in here
+    FindMoon(daynum);
+
+    //printw(5+tshift,1,"Satellite     Direction     Velocity     Footprint    Altitude     Slant Range");
+    //printw(6+tshift,1,"---------     ---------     --------     ---------    --------     -----------");
+    //printw(7+tshift,1,"        .            Az           mi            mi          mi              mi");
+    //printw(8+tshift,1,"        .            El           km            km          km              km");
+    //printw(16+bshift,1,"Eclipse Depth   Orbital Phase   Orbital Model   Squint Angle      AutoTracking");
+    //printw(17+bshift,1,"-------------   -------------   -------------   ------------      ------------");
+
+        // Display
+    printf("Name            %s\n",  sat.name);
+    printf("Date            %s\n",  Daynum2String(daynum));
+    printf("Latitude(%s)    %f\n",  (io_lat=='N'?"N":"S"), (io_lat=='N'?+1:-1)*sat_lat);
+    printf("Longitude(%s)   %f\n",  (io_lon=='W'?"W":"E"), (io_lon=='W'?360.0-sat_lon:sat_lon));
+    printf("Azimuth         %f\n",  sat_azi);
+    printf("Elevation       %f\n",  sat_ele);
+    printf("Velocity        %f\n",  3600.0*sat_vel);
+    printf("Footprint       %f\n",  fk);
+    printf("Altitude(km)    %f\n",  sat_alt);
+    printf("Slant_Range(km) %f\n",  sat_range);
+    printf("Eclipse_Depth   %f\n",  eclipse_depth/deg2rad);
+    printf("Orbital_Phase   %f\n",  256.0*(phase/twopi));
+    printf("Orbital_Model   %s\n",  ephem);
+    printf("Visibility      %c\n",  visibility);
+    printf("Sunlight        %d\n",  sunlit);
+    printf("Orbit_Number    %ld\n", rv);
+    //TODO: We're not supporting rotor tracking
+    printf("Geostationary   %d\n",  geostationary);
+    printf("AOS_Happens     %d\n",  aoshappens);
+    printf("Decayed         %d\n",  decayed);
+    printf("Doppler         %f\n",  doppler100);
+    //TODO: AOS and LOS, as conditional occurrences, belong to QuickPredict
+
+    printf("Sun_Azimuth     %f\n",  sun_azi);
+    printf("Sun_Elevation   %f\n",  sun_ele);
+
+    printf("Moon_Azimuth    %f\n",  moon_az);
+    printf("Moon_Elevation  %f\n",  moon_el);
+}
+
 void SingleTrack(int x)
 {
 	/* This function tracks a single satellite in real-time
@@ -5654,6 +5736,7 @@ int main(char argc, char *argv[])
 	{
 		if (quickfind)  /* -f was passed to PREDICT */
 		{
+			SingleTrackExtract();
 			exit(QuickFind(quickstring,outputfile));
 		}
 
