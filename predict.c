@@ -130,7 +130,7 @@ typedef struct observation {
 	double epoch;
 	char orbital_model[5];
 	long norad_id;
-	char name[25];;
+	char name[25];
 	double latitude;
 	double longitude;
 	double altitude;
@@ -4641,10 +4641,11 @@ void MakeObservation(double obs_time, struct observation * obs) {
     obs->has_aos = aoshappens;
     obs->decayed = decayed;
     obs->doppler = doppler100;
+}
 
-    // Display
+void PrintObservation(struct observation * obs) {
     printf("NORAD_ID        %d\n", obs->norad_id);
-    //printf("Name            %s\n", obs->name);
+    printf("Name            %s\n", obs->name);
     printf("Date(epoch)     %f\n", obs->epoch);
     printf("Latitude(N)     %f\n", obs->latitude);
     printf("Longitude(E)    %f\n", obs->longitude);
@@ -4656,7 +4657,7 @@ void MakeObservation(double obs_time, struct observation * obs) {
     printf("Slant_Range(km) %f\n", obs->slant_range);
     printf("Eclipse_Depth   %f\n", obs->eclipse_depth);
     printf("Orbital_Phase   %f\n", obs->orbital_phase);
-    //printf("Orbital_Model   %s\n", obs->orbital_model);
+    printf("Orbital_Model   %s\n", obs->orbital_model);
     printf("Visibility      %c\n", obs->visibility);
     printf("Sunlight        %d\n", obs->sunlit);
     printf("Orbit_Number    %ld\n",obs->orbit);
@@ -4664,7 +4665,6 @@ void MakeObservation(double obs_time, struct observation * obs) {
     printf("AOS_Happens     %d\n", obs->has_aos);
     printf("Decayed         %d\n", obs->decayed);
     printf("Doppler         %f\n", obs->doppler);
-
 }
 
 void SingleTrack(int x)
@@ -5785,6 +5785,7 @@ int main(char argc, char *argv[])
 		{
 			observation now = { 0 };
 			MakeObservation(CurrentDaynum(), &now);
+			PrintObservation(&now);
 			exit(QuickFind(quickstring,outputfile));
 		}
 
