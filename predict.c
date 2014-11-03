@@ -4450,32 +4450,6 @@ void PredictSun()
 	} while (quit==0);
 }
 
-char KbEdit(int x, int y)
-{
-	/* This function is used when editing QTH
-	   and orbital data via the keyboard. */
-
-	char need2save=0, input[25];
-
-	echo();
-	move(y-1,x-1);
-	wgetnstr(stdscr,input,24);
-
-	if (strlen(input)!=0)
-	{
-		need2save=1;  /* Save new data to variables */
-		resave=1;     /* Save new data to disk files */
-		strncpy(temp,input,24);
-	}
-
-	mvprintw(y-1,x-1,"%-25s",temp);
-
-	refresh();
-	noecho();
-
-	return need2save;
-}
-
 void ShowOrbitData()
 {
 	/* This function permits displays a satellite's orbital
@@ -4569,307 +4543,6 @@ void ShowOrbitData()
 		x=Select();
 	 };
 }	
-
-void KepEdit()
-{
-	/* This function permits keyboard editing of the orbital database. */
-
-	int x;
-
-	do
-	{
-		x=Select();
-
-		if (x!=-1)
-		{
-			bkgdset(COLOR_PAIR(3)|A_BOLD);
-			clear();
-			mvprintw(3,1,"\t\t   *  Orbital Database Editing Utility  *\n\n\n");
-			attrset(COLOR_PAIR(4)|A_BOLD);
-
-			printw("\n\t\t\tSpacecraft Name :");
-			printw("\n\t\t\tCatalog Number  :");
-			printw("\n\t\t\tDesignator      :");
-			printw("\n\t\t\tReference Epoch :");
-			printw("\n\t\t\tInclination     :");
-			printw("\n\t\t\tRAAN            :");
-			printw("\n\t\t\tEccentricity    :");
-			printw("\n\t\t\tArg of Perigee  :");
-			printw("\n\t\t\tMean Anomaly    :");
-			printw("\n\t\t\tMean Motion     :");
-			printw("\n\t\t\tDecay Rate      :");
-			printw("\n\t\t\tNddot/6         :");
-			printw("\n\t\t\tBstar Drag Term :");        
-			printw("\n\t\t\tOrbit Number    :");
-			printw("\n\t\t\tElement Set No. :");
-
-			attrset(COLOR_PAIR(2)|A_BOLD);
-
-			mvprintw(7,42,"%s",sat.name);
-			mvprintw(8,42,"%ld",sat.catnum);
-			mvprintw(9,42,"%s",sat.designator);
-			mvprintw(10,42,"%02d %.8f",sat.year,sat.refepoch);
-			mvprintw(11,42,"%.4f",sat.incl);
-			mvprintw(12,42,"%.4f",sat.raan);
-			mvprintw(13,42,"%g",sat.eccn);
-			mvprintw(14,42,"%.4f",sat.argper);
-			mvprintw(15,42,"%.4f",sat.meanan);
-			mvprintw(16,42,"%.8f",sat.meanmo);
-			mvprintw(17,42,"%g",sat.drag);
-			mvprintw(18,42,"%g",sat.nddot6);
-			mvprintw(19,42,"%g",sat.bstar);
-			mvprintw(20,42,"%ld",sat.orbitnum);
-			mvprintw(21,42,"%ld",sat.setnum);
-
-			curs_set(1);
-			refresh();
-
-			sprintf(temp,"%s",sat.name);
-
-			if (KbEdit(43,8))
-			{
-				strncpy(sat.name,temp,24);
-			}
-
-			sprintf(temp,"%ld",sat.catnum);
-
-			if (KbEdit(43,9))
-			{
-				sscanf(temp,"%ld",&sat.catnum);
-			}
-
-			sprintf(temp,"%s",sat.designator);
-
-			if (KbEdit(43,10))
-			{
-				sscanf(temp,"%s",sat.designator);
-			}
-
-			sprintf(temp,"%02d %4.8f",sat.year,sat.refepoch);
-
-			if (KbEdit(43,11))
-			{
-				sscanf(temp,"%d %lf",&sat.year,&sat.refepoch);
-			}
-
-			sprintf(temp,"%4.4f",sat.incl);
-
-			if (KbEdit(43,12))
-			{
-				sscanf(temp,"%lf",&sat.incl);
-			}
-			    
-			sprintf(temp,"%4.4f",sat.raan);
-
-			if (KbEdit(43,13))
-			{
-				sscanf(temp,"%lf",&sat.raan);
-			}
-
-			sprintf(temp,"%g",sat.eccn);
-
-			if (KbEdit(43,14))
-			{
-				sscanf(temp,"%lf",&sat.eccn);
-			}
-			    
-			sprintf(temp,"%4.4f",sat.argper);
-
-			if (KbEdit(43,15))
-			{
-				sscanf(temp,"%lf",&sat.argper);
-			}
-			    
-			sprintf(temp,"%4.4f",sat.meanan);
-
-			if (KbEdit(43,16))
-			{
-				sscanf(temp,"%lf",&sat.meanan);
-			}
-
-			sprintf(temp,"%4.8f",sat.meanmo);
-
-			if (KbEdit(43,17))
-			{
-				sscanf(temp,"%lf",&sat.meanmo);
-			}
-			    
-			sprintf(temp,"%g",sat.drag);
-
-			if (KbEdit(43,18))
-			{
-				sscanf(temp,"%lf",&sat.drag);
-			}
-			    
-			sprintf(temp,"%g",sat.nddot6);
-
-			if (KbEdit(43,19))
-			{
-				sscanf(temp,"%lf",&sat.nddot6);
-			}
-
-			sprintf(temp,"%g",sat.bstar);
-
-			if (KbEdit(43,20))
-			{
-				sscanf(temp,"%lf",&sat.bstar);
-			}
-
-			sprintf(temp,"%ld",sat.orbitnum);
-
-			if (KbEdit(43,21))
-			{
-				sscanf(temp,"%ld",&sat.orbitnum);
-			}
-
-			sprintf(temp,"%ld",sat.setnum);
-
-			if (KbEdit(43,22))
-			{
-				sscanf(temp,"%ld",&sat.setnum);
-			}
-		  	
-			curs_set(0);
-		}
-
-	} while (x!=-1);
-
-	if (resave)
-	{
-		SaveTLE();
-		resave=0;
-	}
-}	
-
-void QthEdit()
-{
-	/* This function permits keyboard editing of
-	   the ground station's location information. */
-
-	bkgdset(COLOR_PAIR(3)|A_BOLD);
-	clear();
-	curs_set(1);
-	mvprintw(7,0,"\t\t *  Ground Station Location Editing Utility  *\n\n\n");
-
-	attrset(COLOR_PAIR(4)|A_BOLD);
-	printw("\n\t\t\tStation Callsign  :");
-	printw("\n\t\t\tStation Latitude  :");
-	printw("\n\t\t\tStation Longitude :");
-	printw("\n\t\t\tStation Altitude  :");
-
-	attrset(COLOR_PAIR(2)|A_BOLD);
-	mvprintw(11,44,"%s",qth.callsign);
-
-	if (io_lat=='N')
-	{
-		mvprintw(12,44,"%g [DegN]",+qth.stnlat);
-	}
-	else
-	{
-		mvprintw(12,44,"%g [DegS]",-qth.stnlat);
-	}
-
-	if (io_lon=='W')
-	{
-		mvprintw(13,44,"%g [DegW]",+qth.stnlong);
-	}
-	else
-	{
-		mvprintw(13,44,"%g [DegE]",-qth.stnlong);
-	}
-
-	mvprintw(14,44,"%d [m]",qth.stnalt);
-
-	refresh();
-
-	sprintf(temp,"%s",qth.callsign);
-
-	mvprintw(18,12,"Enter the callsign or identifier of your ground station");
-
-	if (KbEdit(45,12))
-	{
-		strncpy(qth.callsign,temp,16);
-	}
-
-	if (io_lat=='N')
-	{
-		sprintf(temp,"%g [DegN]",+qth.stnlat);
-	}
-	else
-	{
-		sprintf(temp,"%g [DegS]",-qth.stnlat);
-	}
-
-	if (io_lat=='N')
-	{
-		mvprintw(18,12,"Enter your latitude in degrees NORTH  (south=negative) ");
-	}
-	else
-	{
-		mvprintw(18,12,"Enter your latitude in degrees SOUTH  (north=negative) ");
-	}
- 
-	mvprintw(19,12,"  Decimal (74.2467) or DMS (74 14 48) format allowed");
-
-	if (KbEdit(45,13))
-	{
-		if (io_lat=='N')
-		{
-			qth.stnlat=+ReadBearing(temp);
-		}
-		else
-		{
-			qth.stnlat=-ReadBearing(temp);
-		}
-	}
- 
-	if (io_lon=='W')
-	{
-		sprintf(temp,"%g [DegW]",+qth.stnlong);
-	}
-	else
-	{
-		sprintf(temp,"%g [DegE]",-qth.stnlong);
-	}
- 
-	if (io_lon=='W')
-	{
-		mvprintw(18,12,"Enter your longitude in degrees WEST   (east=negative) ");
-	}
-	else
-	{
-		mvprintw(18,12,"Enter your longitude in degrees EAST   (west=negative) ");
-	}
- 
-	if (KbEdit(45,14))
-	{
-		if (io_lon=='W')
-		{
-			qth.stnlong=+ReadBearing(temp);
-		}
-		else
-		{
-			qth.stnlong=-ReadBearing(temp);
-		}
-	}
- 
-	move(19,12);
-	clrtoeol();
-	mvprintw(18,12,"    Enter your altitude above sea level (in meters)   ");
-
-	sprintf(temp,"%d",qth.stnalt);
-
-	if (KbEdit(45,15))
-	{
-		sscanf(temp,"%d",&qth.stnalt);
-	}
-
-	if (resave)
-	{
-		SaveQTH();
-		resave=0;
-	}
-}
 
 void SingleTrack(int x)
 {
@@ -5470,11 +5143,11 @@ void MainMenu()
 	mvprintw(19,1,"[M]: UNIMPLEMENTED");
 
 	mvprintw(13,40,"[I]: Program Information");
-	mvprintw(14,40,"[G]: Edit Ground Station Information");
+	mvprintw(14,40,"[G]: UNIMPLEMENTED");
 	mvprintw(15,40,"[D]: Display Satellite Orbital Data");
 	mvprintw(16,40,"[U]: Update Sat Elements From File");
-	mvprintw(17,40,"[E]: Manually Edit Orbital Elements");
-	mvprintw(18,40,"[B]: Edit Transponder Database");
+	mvprintw(17,40,"[E]: UNIMPLEMENTED");
+	mvprintw(18,40,"[B]: UNIMPLEMENTED");
 	mvprintw(19,40,"[Q]: Exit PREDICT");
 
 	refresh();
@@ -5512,18 +5185,6 @@ void ProgramInfo()
 
 	refresh();
 	attrset(COLOR_PAIR(4)|A_BOLD);
-	AnyKey();
-}
-
-void db_edit()
-{
-	clear();
-	attrset(COLOR_PAIR(3)|A_BOLD);
-	mvprintw(2,15,"* PREDICT Transponder Database Editing Utility *");
-	attrset(COLOR_PAIR(2)|A_BOLD);
-	mvprintw(13,33,"Coming Soon!");
-	attrset(COLOR_PAIR(4)|A_BOLD);
-	refresh();
 	AnyKey();
 }
 
@@ -6105,18 +5766,8 @@ int main(char argc, char *argv[])
 					MainMenu();
 					break;
 
-				case 'e':
-					KepEdit();
-					MainMenu();
-					break;
-
 				case 'd':
 					ShowOrbitData();
-					MainMenu();
-					break;
-
-				case 'g':
-					QthEdit();
 					MainMenu();
 					break;
 
@@ -6134,11 +5785,6 @@ int main(char argc, char *argv[])
 
 				case 'i':
 					ProgramInfo();
-					MainMenu();
-					break;
-
-				case 'b':
-					db_edit();
 					MainMenu();
 					break;
 
