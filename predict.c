@@ -4538,10 +4538,14 @@ void ShowOrbitData()
 	 };
 }	
 
+// This function was extracted from SingleTrack and shows a number of derived parameters related
+// to a satellite observed from a particular point on earth.
+//
 // NOTE: We don't support uplink, downlink, squint and related parameters.  The related code
 //       is convoluted and it's never come up in our usage.  FYI, the 'Edit Transponder Database'
 //       menu option is still marked "coming soon" :).  We'll add it back if there's demand.
-void SingleTrackExtract(double obs_time) {
+//
+void MakeObservation(double obs_time) {
     char geostationary=0, aoshappens=0, decayed=0, visibility=0, sunlit;
     double doppler100=0.0, delay;
 
@@ -5736,7 +5740,7 @@ int main(char argc, char *argv[])
 	{
 		if (quickfind)  /* -f was passed to PREDICT */
 		{
-			SingleTrackExtract(CurrentDaynum());
+			MakeObservation(CurrentDaynum());
 			exit(QuickFind(quickstring,outputfile));
 		}
 
