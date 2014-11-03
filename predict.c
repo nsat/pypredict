@@ -4593,9 +4593,10 @@ void MakeObservation(double obs_time) {
     //printw(16+bshift,1,"Eclipse Depth   Orbital Phase   Orbital Model   Squint Angle      AutoTracking");
     //printw(17+bshift,1,"-------------   -------------   -------------   ------------      ------------");
 
-        // Display
+    // Display
     printf("Name            %s\n",  sat.name);
-    printf("Date            %s\n",  Daynum2String(daynum));
+    printf("Date(epoch)     %f\n",  (daynum+3651.0)*(86400.0)); //See daynum=((start/86400.0)-3651.0);
+    printf("Date(ASCII)     %s\n",  Daynum2String(daynum));
     printf("Latitude(N)     %f\n",  (io_lat=='N'?+1:-1)*sat_lat);
     printf("Longitude(E)    %f\n",  (io_lon=='W'?360.0-sat_lon:sat_lon));
     printf("Azimuth         %f\n",  sat_azi);
