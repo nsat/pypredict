@@ -146,7 +146,7 @@ struct	{  char line1[70];
 	   double nddot6;
   	   double bstar;
 	   long orbitnum;
-	}  sat[24];
+	}  sat;
 
 struct	{  char callsign[17];
 	   double stnlat;
@@ -168,7 +168,7 @@ struct	{  char name[25];
 	   unsigned char dayofweek[10];
 	   int phase_start[10];
 	   int phase_end[10];
-	}  sat_db[24];
+	}  sat_db;
 
 /* Global variables for sharing data among functions... */
 
@@ -214,7 +214,7 @@ struct {
 	double nextevent;
 	long aos;
 	long orbitnum;
-} body[24];
+} body;
 
 unsigned short portbase=0;
 
@@ -2228,12 +2228,12 @@ void socket_server(char *predict_name)
 
 			for (i=0; i<24; i++)
 			{
-				if ((strncmp(satname,sat[i].name,25)==0) || (atol(satname)==sat[i].catnum))
+				if ((strncmp(satname,sat.name,25)==0) || (atol(satname)==sat.catnum))
 				{
-					nxtevt=(long)rint(86400.0*(body[i].nextevent+3651.0));
+					nxtevt=(long)rint(86400.0*(body.nextevent+3651.0));
 
 					/* Build text buffer with satellite data */
-					sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat[i].name,body[i].lon,body[i].lat,body[i].az,body[i].el,nxtevt,body[i].footprint,body[i].range,body[i].altitude,body[i].velocity,body[i].orbitnum,body[i].visibility,body[i].phase,body[i].eclipse_depth,body[i].squint);
+					sprintf(buff,"%s\n%-7.2f\n%+-6.2f\n%-7.2f\n%+-6.2f\n%ld\n%-7.2f\n%-7.2f\n%-7.2f\n%-7.2f\n%ld\n%c\n%-7.2f\n%-7.2f\n%-7.2f\n",sat.name,body.lon,body.lat,body.az,body.el,nxtevt,body.footprint,body.range,body.altitude,body.velocity,body.orbitnum,body.visibility,body.phase,body.eclipse_depth,body.squint);
 
 					/* Send buffer back to the client that sent the request */
 					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
@@ -2259,11 +2259,11 @@ void socket_server(char *predict_name)
 
 			for (i=0; i<24; i++)
 			{
-				if ((strncmp(satname,sat[i].name,25)==0) || (atol(satname)==sat[i].catnum))
+				if ((strncmp(satname,sat.name,25)==0) || (atol(satname)==sat.catnum))
 				{
 					/* Build text buffer with satellite data */
 
-					sprintf(buff,"%s\n%s\n%s\n",sat[i].name,sat[i].line1, sat[i].line2);
+					sprintf(buff,"%s\n%s\n%s\n",sat.name,sat.line1, sat.line2);
 					/* Send buffer back to the client that sent the request */
 					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
 					ok=1;
@@ -2288,12 +2288,12 @@ void socket_server(char *predict_name)
 
 			for (i=0; i<24; i++)
 			{
-				if ((strncmp(satname,sat[i].name,25)==0) || (atol(satname)==sat[i].catnum))
+				if ((strncmp(satname,sat.name,25)==0) || (atol(satname)==sat.catnum))
 				{
 					/* Get Normalized (100 MHz)
-					   Doppler shift for sat[i] */
+					   Doppler shift for sat */
 
-					sprintf(buff,"%f\n",body[i].doppler);
+					sprintf(buff,"%f\n",body.doppler);
 
 					/* Send buffer back to client who sent request */
 					sendto(sock,buff,strlen(buff),0,(struct sockaddr*)&fsin,sizeof(fsin));
@@ -2309,9 +2309,9 @@ void socket_server(char *predict_name)
 
 			for (i=0; i<24; i++)
 			{
-				if (sat[i].name[0]!=0)
+				if (sat.name[0]!=0)
 				{
-					strcat(buff,sat[i].name);
+					strcat(buff,sat.name);
 				}
 
 				strcat(buff,"\n");
@@ -2649,24 +2649,24 @@ void InternalUpdate(int x)
 
 	double tempnum;
 
-	strncpy(sat[x].designator,SubString(sat[x].line1,9,16),8);
-	sat[x].designator[9]=0;
-	sat[x].catnum=atol(SubString(sat[x].line1,2,6));
-	sat[x].year=atoi(SubString(sat[x].line1,18,19));
-	sat[x].refepoch=atof(SubString(sat[x].line1,20,31));
-	tempnum=1.0e-5*atof(SubString(sat[x].line1,44,49));
-	sat[x].nddot6=tempnum/pow(10.0,(sat[x].line1[51]-'0'));
-	tempnum=1.0e-5*atof(SubString(sat[x].line1,53,58));
-	sat[x].bstar=tempnum/pow(10.0,(sat[x].line1[60]-'0'));
-	sat[x].setnum=atol(SubString(sat[x].line1,64,67));
-	sat[x].incl=atof(SubString(sat[x].line2,8,15));
-	sat[x].raan=atof(SubString(sat[x].line2,17,24));
-	sat[x].eccn=1.0e-07*atof(SubString(sat[x].line2,26,32));
-	sat[x].argper=atof(SubString(sat[x].line2,34,41));
-	sat[x].meanan=atof(SubString(sat[x].line2,43,50));
-	sat[x].meanmo=atof(SubString(sat[x].line2,52,62));
-	sat[x].drag=atof(SubString(sat[x].line1,33,42));
-	sat[x].orbitnum=atof(SubString(sat[x].line2,63,67));
+	strncpy(sat.designator,SubString(sat.line1,9,16),8);
+	sat.designator[9]=0;
+	sat.catnum=atol(SubString(sat.line1,2,6));
+	sat.year=atoi(SubString(sat.line1,18,19));
+	sat.refepoch=atof(SubString(sat.line1,20,31));
+	tempnum=1.0e-5*atof(SubString(sat.line1,44,49));
+	sat.nddot6=tempnum/pow(10.0,(sat.line1[51]-'0'));
+	tempnum=1.0e-5*atof(SubString(sat.line1,53,58));
+	sat.bstar=tempnum/pow(10.0,(sat.line1[60]-'0'));
+	sat.setnum=atol(SubString(sat.line1,64,67));
+	sat.incl=atof(SubString(sat.line2,8,15));
+	sat.raan=atof(SubString(sat.line2,17,24));
+	sat.eccn=1.0e-07*atof(SubString(sat.line2,26,32));
+	sat.argper=atof(SubString(sat.line2,34,41));
+	sat.meanan=atof(SubString(sat.line2,43,50));
+	sat.meanmo=atof(SubString(sat.line2,52,62));
+	sat.drag=atof(SubString(sat.line1,33,42));
+	sat.orbitnum=atof(SubString(sat.line2,63,67));
 }
 
 char *noradEvalue(double value)
@@ -2717,23 +2717,23 @@ void Data2TLE(int x)
 
 	/* Insert orbital data */
 
-	sprintf(string,"%05ld",sat[x].catnum);
+	sprintf(string,"%05ld",sat.catnum);
 	CopyString(string,line1,2,6);
 	CopyString(string,line2,2,6);
 
-	CopyString(sat[x].designator,line1,9,16);
+	CopyString(sat.designator,line1,9,16);
 
-	sprintf(string,"%02d",sat[x].year);
+	sprintf(string,"%02d",sat.year);
 	CopyString(string,line1,18,19);
 
-	sprintf(string,"%12.8f",sat[x].refepoch);
+	sprintf(string,"%12.8f",sat.refepoch);
 	CopyString(string,line1,20,32);
 
-	sprintf(string,"%.9f",fabs(sat[x].drag));
+	sprintf(string,"%.9f",fabs(sat.drag));
 
 	CopyString(string,line1,33,42);
 
-	if (sat[x].drag<0.0)
+	if (sat.drag<0.0)
 	{
 		line1[33]='-';
 	}
@@ -2742,19 +2742,19 @@ void Data2TLE(int x)
 		line1[33]=32;
 	}
 
-	CopyString(noradEvalue(sat[x].nddot6),line1,44,51);
-	CopyString(noradEvalue(sat[x].bstar),line1,53,60);
+	CopyString(noradEvalue(sat.nddot6),line1,44,51);
+	CopyString(noradEvalue(sat.bstar),line1,53,60);
 
-	sprintf(string,"%4lu",sat[x].setnum);
+	sprintf(string,"%4lu",sat.setnum);
 	CopyString(string,line1,64,67);
 
-	sprintf(string,"%9.4f",sat[x].incl);
+	sprintf(string,"%9.4f",sat.incl);
 	CopyString(string,line2,7,15);
 				
-	sprintf(string,"%9.4f",sat[x].raan);
+	sprintf(string,"%9.4f",sat.raan);
 	CopyString(string,line2,16,24);
 
-	sprintf(string,"%13.12f",sat[x].eccn);
+	sprintf(string,"%13.12f",sat.eccn);
 	
 	/* Erase eccentricity's decimal point */
 
@@ -2762,16 +2762,16 @@ void Data2TLE(int x)
 
 	CopyString(string,line2,26,32);
 
-	sprintf(string,"%9.4f",sat[x].argper);
+	sprintf(string,"%9.4f",sat.argper);
 	CopyString(string,line2,33,41);
 
-	sprintf(string,"%9.5f",sat[x].meanan);
+	sprintf(string,"%9.5f",sat.meanan);
 	CopyString(string,line2,43,50);
 
-	sprintf(string,"%12.9f",sat[x].meanmo);
+	sprintf(string,"%12.9f",sat.meanmo);
 	CopyString(string,line2,52,62);
 
-	sprintf(string,"%5lu",sat[x].orbitnum);
+	sprintf(string,"%5lu",sat.orbitnum);
 	CopyString(string,line2,63,67);
 
 	/* Compute and insert checksum for line 1 and line 2 */
@@ -2787,8 +2787,8 @@ void Data2TLE(int x)
 	line1[69]=0;
 	line2[69]=0;
 
-	strcpy(sat[x].line1,line1);
-	strcpy(sat[x].line2,line2);
+	strcpy(sat.line1,line1);
+	strcpy(sat.line2,line2);
 }
 
 double ReadBearing(char *input)
@@ -2921,6 +2921,12 @@ char ReadDataFiles()
 			{
 				/* We found a valid TLE! */
 
+				if (x > 0)
+				{
+					fprintf(stderr, "%s has more than one TLE.\n", tlefile);
+					exit(-1);
+				}
+
 				/* Some TLE sources left justify the sat
 				   name in a 24-byte field that is padded
 				   with blanks.  The following lines cut
@@ -2937,15 +2943,16 @@ char ReadDataFiles()
 				
 				/* Copy TLE data into the sat data structure */
 
-				strncpy(sat[x].name,name,24);
-				strncpy(sat[x].line1,line1,69);
-				strncpy(sat[x].line2,line2,69);
+				strncpy(sat.name,name,24);
+				strncpy(sat.line1,line1,69);
+				strncpy(sat.line2,line2,69);
 
 				/* Update individual parameters */
 
 				InternalUpdate(x);
 
 				x++;
+
 			}
 		}
 
@@ -2973,19 +2980,16 @@ char ReadDataFiles()
 
 				/* Search for match */
 
-				for (y=0, match=0; y<24 && match==0; y++)
+				match = 0;
+				if (catnum==sat.catnum)
 				{
-					if (catnum==sat[y].catnum)
-					{
-						match=1;
-					}
+					match=1;
 				}
 
 				if (match)
 				{
 					transponders=0;
 					entry=0;
-					y--;
 				}
 
 				fgets(line1,40,fd);
@@ -2994,13 +2998,13 @@ char ReadDataFiles()
 				{
 					if (strncmp(line1,"No",2)!=0)
 					{
-						sscanf(line1,"%lf, %lf",&sat_db[y].alat, &sat_db[y].alon);
-						sat_db[y].squintflag=1;
+						sscanf(line1,"%lf, %lf",&sat_db.alat, &sat_db.alon);
+						sat_db.squintflag=1;
 					}
 
 					else
 					{
-						sat_db[y].squintflag=0;
+						sat_db.squintflag=0;
 					}
 				}
 
@@ -3015,11 +3019,11 @@ char ReadDataFiles()
 							if (strncmp(line1,"No",2)!=0)
 							{
 								line1[strlen(line1)-1]=0;
-								strcpy(sat_db[y].transponder_name[entry],line1);
+								strcpy(sat_db.transponder_name[entry],line1);
 							}
 							else
 							{
-								sat_db[y].transponder_name[entry][0]=0;
+								sat_db.transponder_name[entry][0]=0;
 							}
 						}
 
@@ -3027,14 +3031,14 @@ char ReadDataFiles()
 
 						if (match)
 						{
-							sscanf(line1,"%lf, %lf", &sat_db[y].uplink_start[entry], &sat_db[y].uplink_end[entry]);
+							sscanf(line1,"%lf, %lf", &sat_db.uplink_start[entry], &sat_db.uplink_end[entry]);
 						}
 
 						fgets(line1,40,fd);
 
 						if (match)
 						{
-							sscanf(line1,"%lf, %lf", &sat_db[y].downlink_start[entry], &sat_db[y].downlink_end[entry]);
+							sscanf(line1,"%lf, %lf", &sat_db.downlink_start[entry], &sat_db.downlink_end[entry]);
 						}
 
 						fgets(line1,40,fd);
@@ -3044,11 +3048,11 @@ char ReadDataFiles()
 							if (strncmp(line1,"No",2)!=0)
 							{
 								dayofweek=(unsigned char)atoi(line1);
-								sat_db[y].dayofweek[entry]=dayofweek;
+								sat_db.dayofweek[entry]=dayofweek;
 							}
 							else
 							{
-								sat_db[y].dayofweek[entry]=0;
+								sat_db.dayofweek[entry]=0;
 							}
 						}
 
@@ -3058,15 +3062,15 @@ char ReadDataFiles()
 						{
 							if (strncmp(line1,"No",2)!=0)
 							{
-								sscanf(line1,"%d, %d",&sat_db[y].phase_start[entry], &sat_db[y].phase_end[entry]);
+								sscanf(line1,"%d, %d",&sat_db.phase_start[entry], &sat_db.phase_end[entry]);
 							}
 							else
 							{
-								sat_db[y].phase_start[entry]=0;
-								sat_db[y].phase_end[entry]=0;
+								sat_db.phase_start[entry]=0;
+								sat_db.phase_end[entry]=0;
 							}
 
-							if (sat_db[y].uplink_start[entry]!=0.0 || sat_db[y].downlink_start[entry]!=0.0)
+							if (sat_db.uplink_start[entry]!=0.0 || sat_db.downlink_start[entry]!=0.0)
 							{
 								transponders++;
 							}
@@ -3080,7 +3084,7 @@ char ReadDataFiles()
 
 				if (match)
 				{
-					sat_db[y].transponders=transponders;
+					sat_db.transponders=transponders;
 				}
 
 				entry=0;
@@ -3172,9 +3176,9 @@ void SaveTLE()
 
 		/* Write name, line1, line2 to predict.tle */
 
-		fprintf(fd,"%s\n", sat[x].name);  
-		fprintf(fd,"%s\n", sat[x].line1);
-		fprintf(fd,"%s\n", sat[x].line2);
+		fprintf(fd,"%s\n", sat.name);  
+		fprintf(fd,"%s\n", sat.line1);
+		fprintf(fd,"%s\n", sat.line2);
 	}
 
 	fclose(fd);
@@ -3274,23 +3278,23 @@ int AutoUpdate(char *string)
 					/* Scan for object number in datafile to see
 					   if this is something we're interested in */
 
-					for (i=0; (i<24 && sat[i].catnum!=atol(SubString(line1,2,6))); i++);
+					for (i=0; (i<24 && sat.catnum!=atol(SubString(line1,2,6))); i++);
 
 					if (i!=24)
 					{
 						/* We found it!  Check to see if it's more
 						   recent than the data we already have. */
 
-						if (sat[i].year<57)
+						if (sat.year<57)
 						{
-							database_year=365.25*(100.0+(float)sat[i].year);
+							database_year=365.25*(100.0+(float)sat.year);
 						}
 						else
 						{
-							database_year=365.25*(float)sat[i].year;
+							database_year=365.25*(float)sat.year;
 						}
 
-						database_epoch=(float)sat[i].refepoch+database_year;
+						database_epoch=(float)sat.refepoch+database_year;
 
 						tle_year=(float)atof(SubString(line1,18,19));
 
@@ -3323,15 +3327,15 @@ int AutoUpdate(char *string)
 							if (interactive)
 							{
 								bkgdset(COLOR_PAIR(3));
-								printw("     %-15s",sat[i].name);
+								printw("     %-15s",sat.name);
 							}
 
 							savecount++;
 
 							/* Copy TLE data into the sat data structure */
 
-							strncpy(sat[i].line1,line1,69);
-							strncpy(sat[i].line2,line2,69);
+							strncpy(sat.line1,line1,69);
+							strncpy(sat.line2,line2,69);
 							InternalUpdate(i);
 						}
 					}
@@ -3427,9 +3431,9 @@ int Select()
 
 	for (x=0, y=8, z=16; y<16; ++x, ++y, ++z)
 	{
-		printw("\n\t[%c]: %-15s", x+'A', Abbreviate(sat[x].name,15));
-		printw("\t[%c]: %-15s", y+'A', Abbreviate(sat[y].name,15));
-		printw("\t[%c]: %-15s\n", z+'A', Abbreviate(sat[z].name,15));
+		printw("\n\t[%c]: %-15s", x+'A', Abbreviate(sat.name,15));
+		printw("\t[%c]: %-15s", y+'A', Abbreviate(sat.name,15));
+		printw("\t[%c]: %-15s\n", z+'A', Abbreviate(sat.name,15));
 	}
 
 	attrset(COLOR_PAIR(4)|A_BOLD);
@@ -3567,7 +3571,7 @@ double GetStartTime(char mode)
 
 		if (mode!='m' && mode!='o')
 		{
-			printw("\n\n\n\t     Starting UTC Date and Time for Predictions of %-15s\n\n",sat[indx].name);
+			printw("\n\n\n\t     Starting UTC Date and Time for Predictions of %-15s\n\n",sat.name);
 		}
 
 		bozo_count++;
@@ -3936,26 +3940,26 @@ void PreCalc(int x)
 	   to the SGP4/SDP4's single dimensioned tle structure, and
 	   prepares the tracking code for the update. */
 
-	strcpy(tle.sat_name,sat[x].name);
-	strcpy(tle.idesg,sat[x].designator);
-	tle.catnr=sat[x].catnum;
-	tle.epoch=(1000.0*(double)sat[x].year)+sat[x].refepoch;
-	tle.xndt2o=sat[x].drag;
-	tle.xndd6o=sat[x].nddot6;
-	tle.bstar=sat[x].bstar;
-	tle.xincl=sat[x].incl;
-	tle.xnodeo=sat[x].raan;
-	tle.eo=sat[x].eccn;
-	tle.omegao=sat[x].argper;
-	tle.xmo=sat[x].meanan;
-	tle.xno=sat[x].meanmo;
-	tle.revnum=sat[x].orbitnum;
+	strcpy(tle.sat_name,sat.name);
+	strcpy(tle.idesg,sat.designator);
+	tle.catnr=sat.catnum;
+	tle.epoch=(1000.0*(double)sat.year)+sat.refepoch;
+	tle.xndt2o=sat.drag;
+	tle.xndd6o=sat.nddot6;
+	tle.bstar=sat.bstar;
+	tle.xincl=sat.incl;
+	tle.xnodeo=sat.raan;
+	tle.eo=sat.eccn;
+	tle.omegao=sat.argper;
+	tle.xmo=sat.meanan;
+	tle.xno=sat.meanmo;
+	tle.revnum=sat.orbitnum;
 
-	if (sat_db[x].squintflag)
+	if (sat_db.squintflag)
 	{
 		calc_squint=1;
-		alat=deg2rad*sat_db[x].alat;
-		alon=deg2rad*sat_db[x].alon;
+		alat=deg2rad*sat_db.alat;
+		alon=deg2rad*sat_db.alon;
 	}
 	else
 	{
@@ -4126,21 +4130,21 @@ char AosHappens(int x)
 
 	double lin, sma, apogee;
 
-	if (sat[x].meanmo==0.0)
+	if (sat.meanmo==0.0)
 	{
 		return 0;
 	}
 	else
 	{
-		lin=sat[x].incl;
+		lin=sat.incl;
 
 		if (lin>=90.0)
 		{
 			lin=180.0-lin;
 		}
 
-		sma=331.25*exp(log(1440.0/sat[x].meanmo)*(2.0/3.0));
-		apogee=sma*(1.0+sat[x].eccn)-xkmper;
+		sma=331.25*exp(log(1440.0/sat.meanmo)*(2.0/3.0));
+		apogee=sma*(1.0+sat.eccn)-xkmper;
 
 		if ((acos(xkmper/(apogee+xkmper))+(lin*deg2rad)) > fabs(qth.stnlat*deg2rad))
 		{
@@ -4167,9 +4171,9 @@ char Decayed(int x, double time)
 		time=CurrentDaynum();
 	}
 
-	satepoch=DayNum(1,0,sat[x].year)+sat[x].refepoch;
+	satepoch=DayNum(1,0,sat.year)+sat.refepoch;
 
-	if (satepoch+((16.666666-sat[x].meanmo)/(10.0*fabs(sat[x].drag))) < time)
+	if (satepoch+((16.666666-sat.meanmo)/(10.0*fabs(sat.drag))) < time)
 	{
 		return 1;
 	}
@@ -4184,7 +4188,7 @@ char Geostationary(int x)
 	/* This function returns a 1 if the satellite pointed
 	   to by "x" appears to be in a geostationary orbit */
 
-	if (fabs(sat[x].meanmo-1.0027)<0.0002) 
+	if (fabs(sat.meanmo-1.0027)<0.0002) 
 	{
 		return 1;
 	}
@@ -4342,7 +4346,7 @@ int Print(char *string, char mode)
 
 		if (mode!='m' && mode!='o')
 		{
-			strcpy(satellite_name,sat[indx].name);
+			strcpy(satellite_name,sat.name);
 
 			l=strlen(qth.callsign)+strlen(satellite_name)+strlen(type);
 
@@ -4593,7 +4597,7 @@ void Predict(char mode)
 				strcpy(type,"Visual");
 			}
 
-			fprintf(stderr,"\033]0;PREDICT: %s's %s Calendar For %s\007",qth.callsign, type, sat[indx].name);
+			fprintf(stderr,"\033]0;PREDICT: %s's %s Calendar For %s\007",qth.callsign, type, sat.name);
 		}
 
 		do
@@ -4693,7 +4697,7 @@ void Predict(char mode)
 
 		if (AosHappens(indx)==0 || Decayed(indx,daynum)==1)
 		{
-			mvprintw(12,5,"*** Passes for %s cannot occur for your ground station! ***\n",sat[indx].name);
+			mvprintw(12,5,"*** Passes for %s cannot occur for your ground station! ***\n",sat.name);
 		}
 
 		if (Geostationary(indx)==1)
@@ -4917,16 +4921,16 @@ void ShowOrbitData()
 
 	while (x!=-1)
 	{
-		if (sat[x].meanmo!=0.0)
+		if (sat.meanmo!=0.0)
 		{
 			bkgdset(COLOR_PAIR(2)|A_BOLD);
 			clear();
-			sma=331.25*exp(log(1440.0/sat[x].meanmo)*(2.0/3.0));
-			an_period=1440.0/sat[x].meanmo;
-			c1=cos(sat[x].incl*deg2rad);
-			e2=1.0-(sat[x].eccn*sat[x].eccn); 
-			no_period=(an_period*360.0)/(360.0+(4.97*pow((xkmper/sma),3.5)*((5.0*c1*c1)-1.0)/(e2*e2))/sat[x].meanmo);
-			satepoch=DayNum(1,0,sat[x].year)+sat[x].refepoch;
+			sma=331.25*exp(log(1440.0/sat.meanmo)*(2.0/3.0));
+			an_period=1440.0/sat.meanmo;
+			c1=cos(sat.incl*deg2rad);
+			e2=1.0-(sat.eccn*sat.eccn); 
+			no_period=(an_period*360.0)/(360.0+(4.97*pow((xkmper/sma),3.5)*((5.0*c1*c1)-1.0)/(e2*e2))/sat.meanmo);
+			satepoch=DayNum(1,0,sat.year)+sat.refepoch;
 			age=(int)rint(CurrentDaynum()-satepoch);
 
 			if (age==1)
@@ -4938,7 +4942,7 @@ void ShowOrbitData()
 				strcpy(days,"days");
 			}
 
-			namelength=strlen(sat[x].name);
+			namelength=strlen(sat.name);
 
 			printw("\n");
 
@@ -4947,7 +4951,7 @@ void ShowOrbitData()
 				printw(" ");
 			}
 	
-			printw("Orbital Data For %s / Catalog Number %ld\n",sat[x].name,sat[x].catnum);
+			printw("Orbital Data For %s / Catalog Number %ld\n",sat.name,sat.catnum);
 			attrset(COLOR_PAIR(3)|A_BOLD);
 			printw("\n\t\t  Issued %d %s ago on %s UTC\n\n",age,days,Daynum2String(satepoch));
 
@@ -4971,23 +4975,23 @@ void ShowOrbitData()
 			mvprintw(21,21,"Element Set Number");
 
 			attrset(COLOR_PAIR(2)|A_BOLD);
-			mvprintw(5,40,": %02d %.8f",sat[x].year,sat[x].refepoch);
-			mvprintw(6,40,": %.4f deg",sat[x].incl);
-			mvprintw(7,40,": %.4f deg",sat[x].raan);
-			mvprintw(8,40,": %g",sat[x].eccn);
-			mvprintw(9,40,": %.4f deg",sat[x].argper);
-			mvprintw(10,40,": %.4f deg",sat[x].meanan);
-			mvprintw(11,40,": %.8f rev/day",sat[x].meanmo);
-			mvprintw(12,40,": %g rev/day/day",sat[x].drag);
-			mvprintw(13,40,": %g rev/day/day/day",sat[x].nddot6);
-			mvprintw(14,40,": %g 1/earth radii",sat[x].bstar);
+			mvprintw(5,40,": %02d %.8f",sat.year,sat.refepoch);
+			mvprintw(6,40,": %.4f deg",sat.incl);
+			mvprintw(7,40,": %.4f deg",sat.raan);
+			mvprintw(8,40,": %g",sat.eccn);
+			mvprintw(9,40,": %.4f deg",sat.argper);
+			mvprintw(10,40,": %.4f deg",sat.meanan);
+			mvprintw(11,40,": %.8f rev/day",sat.meanmo);
+			mvprintw(12,40,": %g rev/day/day",sat.drag);
+			mvprintw(13,40,": %g rev/day/day/day",sat.nddot6);
+			mvprintw(14,40,": %g 1/earth radii",sat.bstar);
 			mvprintw(15,40,": %.4f km",sma);
-			mvprintw(16,40,": %.4f km",sma*(1.0+sat[x].eccn)-xkmper);
-			mvprintw(17,40,": %.4f km",sma*(1.0-sat[x].eccn)-xkmper);
+			mvprintw(16,40,": %.4f km",sma*(1.0+sat.eccn)-xkmper);
+			mvprintw(17,40,": %.4f km",sma*(1.0-sat.eccn)-xkmper);
 			mvprintw(18,40,": %.4f mins",an_period);
 			mvprintw(19,40,": %.4f mins",no_period);
-			mvprintw(20,40,": %ld",sat[x].orbitnum);
-			mvprintw(21,40,": %ld",sat[x].setnum);
+			mvprintw(20,40,": %ld",sat.orbitnum);
+			mvprintw(21,40,": %ld",sat.setnum);
 
 			attrset(COLOR_PAIR(3)|A_BOLD);
 			refresh();
@@ -5033,128 +5037,128 @@ void KepEdit()
 
 			attrset(COLOR_PAIR(2)|A_BOLD);
 
-			mvprintw(7,42,"%s",sat[x].name);
-			mvprintw(8,42,"%ld",sat[x].catnum);
-			mvprintw(9,42,"%s",sat[x].designator);
-			mvprintw(10,42,"%02d %.8f",sat[x].year,sat[x].refepoch);
-			mvprintw(11,42,"%.4f",sat[x].incl);
-			mvprintw(12,42,"%.4f",sat[x].raan);
-			mvprintw(13,42,"%g",sat[x].eccn);
-			mvprintw(14,42,"%.4f",sat[x].argper);
-			mvprintw(15,42,"%.4f",sat[x].meanan);
-			mvprintw(16,42,"%.8f",sat[x].meanmo);
-			mvprintw(17,42,"%g",sat[x].drag);
-			mvprintw(18,42,"%g",sat[x].nddot6);
-			mvprintw(19,42,"%g",sat[x].bstar);
-			mvprintw(20,42,"%ld",sat[x].orbitnum);
-			mvprintw(21,42,"%ld",sat[x].setnum);
+			mvprintw(7,42,"%s",sat.name);
+			mvprintw(8,42,"%ld",sat.catnum);
+			mvprintw(9,42,"%s",sat.designator);
+			mvprintw(10,42,"%02d %.8f",sat.year,sat.refepoch);
+			mvprintw(11,42,"%.4f",sat.incl);
+			mvprintw(12,42,"%.4f",sat.raan);
+			mvprintw(13,42,"%g",sat.eccn);
+			mvprintw(14,42,"%.4f",sat.argper);
+			mvprintw(15,42,"%.4f",sat.meanan);
+			mvprintw(16,42,"%.8f",sat.meanmo);
+			mvprintw(17,42,"%g",sat.drag);
+			mvprintw(18,42,"%g",sat.nddot6);
+			mvprintw(19,42,"%g",sat.bstar);
+			mvprintw(20,42,"%ld",sat.orbitnum);
+			mvprintw(21,42,"%ld",sat.setnum);
 
 			curs_set(1);
 			refresh();
 
-			sprintf(temp,"%s",sat[x].name);
+			sprintf(temp,"%s",sat.name);
 
 			if (KbEdit(43,8))
 			{
-				strncpy(sat[x].name,temp,24);
+				strncpy(sat.name,temp,24);
 			}
 
-			sprintf(temp,"%ld",sat[x].catnum);
+			sprintf(temp,"%ld",sat.catnum);
 
 			if (KbEdit(43,9))
 			{
-				sscanf(temp,"%ld",&sat[x].catnum);
+				sscanf(temp,"%ld",&sat.catnum);
 			}
 
-			sprintf(temp,"%s",sat[x].designator);
+			sprintf(temp,"%s",sat.designator);
 
 			if (KbEdit(43,10))
 			{
-				sscanf(temp,"%s",sat[x].designator);
+				sscanf(temp,"%s",sat.designator);
 			}
 
-			sprintf(temp,"%02d %4.8f",sat[x].year,sat[x].refepoch);
+			sprintf(temp,"%02d %4.8f",sat.year,sat.refepoch);
 
 			if (KbEdit(43,11))
 			{
-				sscanf(temp,"%d %lf",&sat[x].year,&sat[x].refepoch);
+				sscanf(temp,"%d %lf",&sat.year,&sat.refepoch);
 			}
 
-			sprintf(temp,"%4.4f",sat[x].incl);
+			sprintf(temp,"%4.4f",sat.incl);
 
 			if (KbEdit(43,12))
 			{
-				sscanf(temp,"%lf",&sat[x].incl);
+				sscanf(temp,"%lf",&sat.incl);
 			}
 			    
-			sprintf(temp,"%4.4f",sat[x].raan);
+			sprintf(temp,"%4.4f",sat.raan);
 
 			if (KbEdit(43,13))
 			{
-				sscanf(temp,"%lf",&sat[x].raan);
+				sscanf(temp,"%lf",&sat.raan);
 			}
 
-			sprintf(temp,"%g",sat[x].eccn);
+			sprintf(temp,"%g",sat.eccn);
 
 			if (KbEdit(43,14))
 			{
-				sscanf(temp,"%lf",&sat[x].eccn);
+				sscanf(temp,"%lf",&sat.eccn);
 			}
 			    
-			sprintf(temp,"%4.4f",sat[x].argper);
+			sprintf(temp,"%4.4f",sat.argper);
 
 			if (KbEdit(43,15))
 			{
-				sscanf(temp,"%lf",&sat[x].argper);
+				sscanf(temp,"%lf",&sat.argper);
 			}
 			    
-			sprintf(temp,"%4.4f",sat[x].meanan);
+			sprintf(temp,"%4.4f",sat.meanan);
 
 			if (KbEdit(43,16))
 			{
-				sscanf(temp,"%lf",&sat[x].meanan);
+				sscanf(temp,"%lf",&sat.meanan);
 			}
 
-			sprintf(temp,"%4.8f",sat[x].meanmo);
+			sprintf(temp,"%4.8f",sat.meanmo);
 
 			if (KbEdit(43,17))
 			{
-				sscanf(temp,"%lf",&sat[x].meanmo);
+				sscanf(temp,"%lf",&sat.meanmo);
 			}
 			    
-			sprintf(temp,"%g",sat[x].drag);
+			sprintf(temp,"%g",sat.drag);
 
 			if (KbEdit(43,18))
 			{
-				sscanf(temp,"%lf",&sat[x].drag);
+				sscanf(temp,"%lf",&sat.drag);
 			}
 			    
-			sprintf(temp,"%g",sat[x].nddot6);
+			sprintf(temp,"%g",sat.nddot6);
 
 			if (KbEdit(43,19))
 			{
-				sscanf(temp,"%lf",&sat[x].nddot6);
+				sscanf(temp,"%lf",&sat.nddot6);
 			}
 
-			sprintf(temp,"%g",sat[x].bstar);
+			sprintf(temp,"%g",sat.bstar);
 
 			if (KbEdit(43,20))
 			{
-				sscanf(temp,"%lf",&sat[x].bstar);
+				sscanf(temp,"%lf",&sat.bstar);
 			}
 
-			sprintf(temp,"%ld",sat[x].orbitnum);
+			sprintf(temp,"%ld",sat.orbitnum);
 
 			if (KbEdit(43,21))
 			{
-				sscanf(temp,"%ld",&sat[x].orbitnum);
+				sscanf(temp,"%ld",&sat.orbitnum);
 			}
 
-			sprintf(temp,"%ld",sat[x].setnum);
+			sprintf(temp,"%ld",sat.setnum);
 
 			if (KbEdit(43,22))
 			{
-				sscanf(temp,"%ld",&sat[x].setnum);
+				sscanf(temp,"%ld",&sat.setnum);
 			}
 		  	
 			curs_set(0);
@@ -5321,7 +5325,7 @@ void SingleTrack(int x)
 	PreCalc(x);
 	indx=x;
 
-	if (sat_db[x].transponders>0)
+	if (sat_db.transponders>0)
 	{
 		comsat=1;
 		tshift=0;
@@ -5337,10 +5341,10 @@ void SingleTrack(int x)
 
 	if (comsat)
 	{
-		downlink_start=sat_db[x].downlink_start[xponder];
-		downlink_end=sat_db[x].downlink_end[xponder];
-		uplink_start=sat_db[x].uplink_start[xponder];
-		uplink_end=sat_db[x].uplink_end[xponder];
+		downlink_start=sat_db.downlink_start[xponder];
+		downlink_end=sat_db.downlink_end[xponder];
+		uplink_start=sat_db.uplink_start[xponder];
+		uplink_end=sat_db.uplink_end[xponder];
 
 		if (downlink_start>downlink_end)
 		{
@@ -5368,7 +5372,7 @@ void SingleTrack(int x)
 
 	if (xterm)
 	{
-		fprintf(stderr,"\033]0;PREDICT: Tracking %-10s\007",sat[x].name); 
+		fprintf(stderr,"\033]0;PREDICT: Tracking %-10s\007",sat.name); 
 	}
 	halfdelay(2);
 	curs_set(0);
@@ -5379,7 +5383,7 @@ void SingleTrack(int x)
 
 	printw("                                                                                ");
 	printw("                     PREDICT Real-Time Satellite Tracking                        ");
-	printw("                 Tracking: %-10sOn                                       ",Abbreviate(sat[x].name,9));
+	printw("                 Tracking: %-10sOn                                       ",Abbreviate(sat.name,9));
 	printw("                                                                                 ");
 
 	attrset(COLOR_PAIR(4)|A_BOLD);
@@ -5440,20 +5444,20 @@ void SingleTrack(int x)
 		{
 			if (sun_ele<=-12.0 && sat_ele>=0.0)
 			{
-				body[indx].visibility='V';
+				body.visibility='V';
 			}
 			else
 			{
-				body[indx].visibility='D';
+				body.visibility='D';
 			}
 		}
 
 		else
 		{
-			body[indx].visibility='N';
+			body.visibility='N';
 		}
 
-		visibility=body[indx].visibility;
+		visibility=body.visibility;
 
 		if (comsat)
 		{
@@ -5694,32 +5698,32 @@ void SingleTrack(int x)
 
 		if (socket_flag)
 		{
-			body[indx].az=sat_azi;
-			body[indx].el=sat_ele;
-			body[indx].lat=sat_lat;
-			body[indx].lon=360.0-sat_lon;
-			body[indx].footprint=fk;
-			body[indx].range=sat_range;
-			body[indx].altitude=sat_alt;
-			body[indx].velocity=sat_vel;
-			body[indx].orbitnum=rv;
-			body[indx].doppler=doppler100;
-			body[indx].nextevent=aoslos;
-			body[indx].eclipse_depth=eclipse_depth/deg2rad;
-			body[indx].phase=360.0*(phase/twopi);
+			body.az=sat_azi;
+			body.el=sat_ele;
+			body.lat=sat_lat;
+			body.lon=360.0-sat_lon;
+			body.footprint=fk;
+			body.range=sat_range;
+			body.altitude=sat_alt;
+			body.velocity=sat_vel;
+			body.orbitnum=rv;
+			body.doppler=doppler100;
+			body.nextevent=aoslos;
+			body.eclipse_depth=eclipse_depth/deg2rad;
+			body.phase=360.0*(phase/twopi);
 
 			if (calc_squint)
 			{
-				body[indx].squint=squint;
+				body.squint=squint;
 			}
 			else
 			{
-				body[indx].squint=360.0;
+				body.squint=360.0;
 			}
 
 			FindSun(daynum);
 
-			sprintf(tracking_mode, "%s\n%c",sat[indx].name,0);
+			sprintf(tracking_mode, "%s\n%c",sat.name,0);
 		}
 
 		/* Get input from keyboard */
@@ -5743,11 +5747,11 @@ void SingleTrack(int x)
 
 		if (comsat)
 		{
-			if (ans==' ' && sat_db[x].transponders>1)
+			if (ans==' ' && sat_db.transponders>1)
 			{
 				xponder++;
 
-				if (xponder>=sat_db[x].transponders)
+				if (xponder>=sat_db.transponders)
 				{
 					xponder=0;
 				}
@@ -5755,10 +5759,10 @@ void SingleTrack(int x)
 				move(10,1);
 				clrtoeol();
 
-				downlink_start=sat_db[x].downlink_start[xponder];
-				downlink_end=sat_db[x].downlink_end[xponder];
-				uplink_start=sat_db[x].uplink_start[xponder];
-				uplink_end=sat_db[x].uplink_end[xponder];
+				downlink_start=sat_db.downlink_start[xponder];
+				downlink_end=sat_db.downlink_end[xponder];
+				uplink_start=sat_db.uplink_start[xponder];
+				uplink_end=sat_db.uplink_end[xponder];
 
 				if (downlink_start>downlink_end)
 				{
@@ -5825,8 +5829,8 @@ void SingleTrack(int x)
 				}
 			}
 
-			length=strlen(sat_db[x].transponder_name[xponder])/2;
-			mvprintw(10,40-length,"%s",sat_db[x].transponder_name[xponder]);
+			length=strlen(sat_db.transponder_name[xponder])/2;
+			mvprintw(10,40-length,"%s",sat_db.transponder_name[xponder]);
 		}
 
 		refresh();
@@ -5906,7 +5910,7 @@ void MultiTrack()
 				x=1;
 			}
 
-			if (sat[indx].meanmo!=0.0 && Decayed(indx,0.0)!=1)
+			if (sat.meanmo!=0.0 && Decayed(indx,0.0)!=1)
 			{
 				daynum=CurrentDaynum();
 				PreCalc(indx);
@@ -5941,32 +5945,32 @@ void MultiTrack()
 					sunstat='N';
 				}
 
-				mvprintw(y+6,x,"%-10s%3.0f  %+3.0f  %3.0f   %3.0f %6.0f %c", Abbreviate(sat[indx].name,9),sat_azi,sat_ele,(io_lat=='N'?+1:-1)*sat_lat,(io_lon=='W'?360.0-sat_lon:sat_lon),sat_range,sunstat);
+				mvprintw(y+6,x,"%-10s%3.0f  %+3.0f  %3.0f   %3.0f %6.0f %c", Abbreviate(sat.name,9),sat_azi,sat_ele,(io_lat=='N'?+1:-1)*sat_lat,(io_lon=='W'?360.0-sat_lon:sat_lon),sat_range,sunstat);
 
 				if (socket_flag)
 				{
-					body[indx].az=sat_azi;
-					body[indx].el=sat_ele;
-					body[indx].lat=sat_lat;
-					body[indx].lon=360.0-sat_lon;
-					body[indx].footprint=fk;
-					body[indx].range=sat_range;
-					body[indx].altitude=sat_alt;
-					body[indx].velocity=sat_vel;
-					body[indx].orbitnum=rv;
-					body[indx].visibility=sunstat;
-					body[indx].eclipse_depth=eclipse_depth/deg2rad;
-					body[indx].phase=360.0*(phase/twopi);
+					body.az=sat_azi;
+					body.el=sat_ele;
+					body.lat=sat_lat;
+					body.lon=360.0-sat_lon;
+					body.footprint=fk;
+					body.range=sat_range;
+					body.altitude=sat_alt;
+					body.velocity=sat_vel;
+					body.orbitnum=rv;
+					body.visibility=sunstat;
+					body.eclipse_depth=eclipse_depth/deg2rad;
+					body.phase=360.0*(phase/twopi);
 
-					body[indx].doppler=-100e06*((sat_range_rate*1000.0)/299792458.0);
+					body.doppler=-100e06*((sat_range_rate*1000.0)/299792458.0);
 
 					if (calc_squint)
 					{
-						body[indx].squint=squint;
+						body.squint=squint;
 					}
 					else
 					{
-						body[indx].squint=360.0;
+						body.squint=360.0;
 					}
 
 					FindSun(daynum);
@@ -6021,12 +6025,12 @@ void MultiTrack()
 				{
 					if (ok2predict[indx])
 					{
-						body[indx].nextevent=aoslos[indx];
+						body.nextevent=aoslos[indx];
 					}
 
 					else
 					{
-						body[indx].nextevent=-3651.0;
+						body.nextevent=-3651.0;
 					}
 				}
 
@@ -6037,25 +6041,25 @@ void MultiTrack()
 			if (Decayed(indx,0.0))
 			{
 				attrset(COLOR_PAIR(2));
-				mvprintw(y+6,x,"%-10s---------- Decayed ---------", Abbreviate(sat[indx].name,9));
+				mvprintw(y+6,x,"%-10s---------- Decayed ---------", Abbreviate(sat.name,9));
 
 				if (socket_flag)
 				{
-					body[indx].az=0.0;
-					body[indx].el=0.0;
-					body[indx].lat=0.0;
-					body[indx].lon=0.0;
-					body[indx].footprint=0.0;
-					body[indx].range=0.0;
-					body[indx].altitude=0.0;
-					body[indx].velocity=0.0;
-					body[indx].orbitnum=0L;
-					body[indx].visibility='N';
-					body[indx].eclipse_depth=0.0;
-					body[indx].phase=0.0;
-					body[indx].doppler=0.0;
-					body[indx].squint=0.0;
-					body[indx].nextevent=-3651.0;
+					body.az=0.0;
+					body.el=0.0;
+					body.lat=0.0;
+					body.lon=0.0;
+					body.footprint=0.0;
+					body.range=0.0;
+					body.altitude=0.0;
+					body.velocity=0.0;
+					body.orbitnum=0L;
+					body.visibility='N';
+					body.eclipse_depth=0.0;
+					body.phase=0.0;
+					body.doppler=0.0;
+					body.squint=0.0;
+					body.nextevent=-3651.0;
 				}
 			}
  		}
@@ -6097,7 +6101,7 @@ void MultiTrack()
 			{
 				if (ok2predict[satindex[x]] && aos2[x]!=0.0)
 				{
-					mvprintw(y+21,19,"%10s on %s UTC",Abbreviate(sat[(int)satindex[x]].name,9),Daynum2String(aos2[x]));
+					mvprintw(y+21,19,"%10s on %s UTC",Abbreviate(sat.name,9),Daynum2String(aos2[x]));
 
 					if (z==-1)
 					{
@@ -6152,7 +6156,7 @@ void Illumination()
 
 	if (xterm)
 	{
-		fprintf(stderr,"\033]0;PREDICT: %s's Solar Illumination Calendar For %s\007",qth.callsign, sat[indx].name);
+		fprintf(stderr,"\033]0;PREDICT: %s's Solar Illumination Calendar For %s\007",qth.callsign, sat.name);
 	}
 
 	do
@@ -6394,7 +6398,7 @@ int QuickFind(char *string, char *outputfile)
 
 	for (z=0; z<24; z++)
 	{
-		if ((strcmp(sat[z].name,satname)==0) || (atol(satname)==sat[z].catnum))
+		if ((strcmp(sat.name,satname)==0) || (atol(satname)==sat.catnum))
 		{
 			start=atol(startstr);
 
@@ -6528,7 +6532,7 @@ int QuickPredict(char *string, char *outputfile)
 
 	for (z=0; z<24; z++)
 	{
-		if ((strcmp(sat[z].name,satname)==0) || (atol(satname)==sat[z].catnum))
+		if ((strcmp(sat.name,satname)==0) || (atol(satname)==sat.catnum))
 		{
 			start=atol(startstr);
 			indx=z;
@@ -6964,7 +6968,7 @@ int main(char argc, char *argv[])
 					PrintVisible("");
 					indx=Select();
 
-					if (indx!=-1 && sat[indx].meanmo!=0.0 && Decayed(indx,0.0)==0)
+					if (indx!=-1 && sat.meanmo!=0.0 && Decayed(indx,0.0)==0)
 					{
 						Predict(key);
 					}
@@ -7008,7 +7012,7 @@ int main(char argc, char *argv[])
 				case 'T':
 					indx=Select();
 
-					if (indx!=-1 && sat[indx].meanmo!=0.0 && Decayed(indx,0.0)==0)
+					if (indx!=-1 && sat.meanmo!=0.0 && Decayed(indx,0.0)==0)
 					{
 						SingleTrack(indx);
 					}
@@ -7033,7 +7037,7 @@ int main(char argc, char *argv[])
 
 				case 's':
 					indx=Select();
-					if (indx!=-1 && sat[indx].meanmo!=0.0 && Decayed(indx,0.0)==0)
+					if (indx!=-1 && sat.meanmo!=0.0 && Decayed(indx,0.0)==0)
 					{
 						Print("",0);
 						Illumination();
