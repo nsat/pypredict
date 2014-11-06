@@ -1,5 +1,0 @@
-#!/bin/bash
-# Script to uninstall PREDICT by breaking symlinks
-# between the installation and destination directories
-#
-rm -f /usr/local/bin/predict /usr/local/man/man1/predict.1
