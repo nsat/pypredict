@@ -15,10 +15,18 @@ sudo python setup.py install
 ```
 ## Usage
 ```
-predict.predict(epoch, tle, qth)
-# \_ epoch - number of seconds since epoch (as float)
+# Outputs the location of the satellite and related parameters
+predict.quick_find(tle, epoch, qth)
 # \_ tle - array of strings (lines 0,1,2 of TLE)
-# \_ qth - (optional) tuple of latitude (float), longitude (float), altitude (int)
+# \_ epoch - (optional, defaults: now) number of seconds since epoch (as float)
+# \_ qth - (optional, defaults: system) tuple of latitude (float), longitude (float), altitude (int)
+
+# Outputs the next pass of the satellite over the groundstation (throws exception if no pass)
+predict.quick_predict(tle, epoch, qth)
+# \_ tle - array of strings (lines 0,1,2 of TLE)
+# \_ epoch - (optional, defaults: now) number of seconds since epoch (as float)
+# \_ qth - (optional, defaults: system) tuple of latitude (float), longitude (float), altitude (int)
+
 ```
 ## Example
 ```
@@ -32,5 +40,7 @@ if res.getcode() != 200:
     raise Exception("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)", res.getcode())
 tle = res.read().rstrip()
 
-predict.predict(time.time(), tle.split('\n'), (37.7727, 122.407, 25))
+predict.quick_find(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
+
+predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ```
