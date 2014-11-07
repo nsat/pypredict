@@ -3345,7 +3345,34 @@ void PrintObservation(struct observation * obs) {
     printf("Doppler         %f\n", obs->doppler);
 }
 
-static PyObject* pypredict(PyObject* self, PyObject *args)
+PyObject * PythonifyObservation(observation * obs) {
+	//TODO: Add reference count?
+	return Py_BuildValue("{s:l,s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:s,s:c,s:i,s:l,s:i,s:i,s:i,s:d}",
+		"norad_id", obs->norad_id,
+		"name", obs->name,
+		"epoch", obs->epoch,
+		"latitude", obs->latitude,
+		"longitude", obs->longitude,
+		"azimuth", obs->azimuth,
+		"elevation", obs->elevation,
+		"orbital_velocity", obs->orbital_velocity,
+		"footprint", obs->footprint,
+		"altitude", obs->altitude,
+		"slant_range", obs->slant_range,
+		"eclipse_depth", obs->eclipse_depth,
+		"orbital_phase", obs->orbital_phase,
+		"orbital_model", obs->orbital_model,
+		"visibility", obs->visibility,
+		"sunlit", obs->sunlit,
+		"orbit", obs->orbit,
+		"geostationary", obs->geostationary,
+		"has_aos", obs->has_aos,
+		"decayed", obs->decayed,
+		"doppler", obs->doppler
+	);
+}
+
+char load(PyObject *args)
 {
 	//TODO: Not threadsafe, detect and raise warning?
 	int x;
@@ -3357,18 +3384,16 @@ static PyObject* pypredict(PyObject* self, PyObject *args)
 
 	val['-']=1;
 
-	struct observation obs = { 0 };
-	double epoch, daynum;
+	double epoch;
 	const char *tle0, *tle1, *tle2;
-	double lat, lon;
-	long alt;
 
-	if (!PyArg_ParseTuple(args, "d(sss)|(ddi)", &epoch, &tle0, &tle1, &tle2, &lat, &lon, &alt))
+	if (!PyArg_ParseTuple(args, "d(sss)|(ddi)",
+		&epoch, &tle0, &tle1, &tle2, &qth.stnlat, &qth.stnlong, &qth.stnalt))
 	{
 		printf("Failure to parse arguments\n");
 		fflush(stdout);
 		//TODO: Throw exception
-		return NULL;
+		return -1;
 	};
 
 	if (ReadTLE(tle0,tle1,tle2)!=0)
@@ -3376,61 +3401,60 @@ static PyObject* pypredict(PyObject* self, PyObject *args)
 		printf("FAILED TO ReadTLE(\"%s\",\"%s\",\"%s\")\n", tle0, tle1, tle2);
 		fflush(stdout);
 		//TODO: Throw exception
-		return NULL;
+		return -1;
 	}
 
-	if (PyObject_Length(args) >= 3)
+	// If we haven't already set groundstation location, use predict's default.
+	if (PyObject_Length(args) < 3)
 	{
-		ReadQTH(lat, lon, alt);
-	}
-	else
-	{
+		FILE *fd;
 		env=getenv("HOME");
 		sprintf(qthfile,"%s/.predict/predict.qth",env);
-		if (ReadQTHFile()!=0)
+		fd=fopen(qthfile,"r");
+		if (fd!=NULL)
 		{
+			fgets(qth.callsign,16,fd);
+			qth.callsign[strlen(qth.callsign)-1]=0;
+			fscanf(fd,"%lf", &qth.stnlat);
+			fscanf(fd,"%lf", &qth.stnlong);
+			fscanf(fd,"%d", &qth.stnalt);
+			fclose(fd);
+		} else {
 			//TODO: Raise exception
 			printf("*** ERROR: QTH file \"%s\" could not be loaded.\n",qthfile);
 			fflush(stdout);
-			return NULL;
+			return -1;
 		}
 	}
+	obs_geodetic.lat=qth.stnlat*deg2rad;
+	obs_geodetic.lon=-qth.stnlong*deg2rad;
+	obs_geodetic.alt=((double)qth.stnalt)/1000.0;
+	obs_geodetic.theta=0.0;
 
 	daynum=((epoch/86400.0)-3651.0);
-	MakeObservation(daynum, &obs);
-	
-	//TODO: Add reference count?
-	return Py_BuildValue("{s:l,s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:s,s:c,s:i,s:l,s:i,s:i,s:i,s:d}",
-		"norad_id", obs.norad_id,
-		"name", obs.name,
-		"epoch", obs.epoch,
-		"latitude", obs.latitude,
-		"longitude", obs.longitude,
-		"azimuth", obs.azimuth,
-		"elevation", obs.elevation,
-		"orbital_velocity", obs.orbital_velocity,
-		"footprint", obs.footprint,
-		"altitude", obs.altitude,
-		"slant_range", obs.slant_range,
-		"eclipse_depth", obs.eclipse_depth,
-		"orbital_phase", obs.orbital_phase,
-		"orbital_model", obs.orbital_model,
-		"visibility", obs.visibility,
-		"sunlit", obs.sunlit,
-		"orbit", obs.orbit,
-		"geostationary", obs.geostationary,
-		"has_aos", obs.has_aos,
-		"decayed", obs.decayed,
-		"doppler", obs.doppler
-	);
+
+	return 0;
 }
 
-static char pypredict_docs[] =
-    "predict(long, (tle_line0, tle_line1, tle_line2), (gs_lat, gs_lon, gs_alt))\n";
+static PyObject* observe(PyObject* self, PyObject *args)
+{
+	struct observation obs = { 0 };
+
+	if (load(args) != 0)
+	{
+		// load will set the appropriate exception if it fails.
+		return NULL;
+	}
+
+	MakeObservation(daynum, &obs);
+	return PythonifyObservation(&obs);
+}
+
+static char observe_docs[] =
+    "observe(long, (tle_line0, tle_line1, tle_line2), (gs_lat, gs_lon, gs_alt))\n";
 
 static PyMethodDef pypredict_funcs[] = {
-    {"predict", (PyCFunction)pypredict, 
-     METH_VARARGS, pypredict_docs},
+    {"observe"  , (PyCFunction)observe  , METH_VARARGS, observe_docs},
     {NULL, NULL, 0, NULL} 
 };
 
