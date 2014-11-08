@@ -9,6 +9,11 @@ We aim for result-parity and it should produce identical values on the same inpu
 If you think you've found an error, please include predict's differing output in the bug report.
 If you think you've found a bug in predict, please report and we'll coordinate with upstream.
 
+## Dependencies
+```
+sudo apt-get install python-dev
+```
+
 ## Installation
 ```
 sudo python setup.py install
