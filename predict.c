@@ -3459,7 +3459,7 @@ static PyObject* quick_find(PyObject* self, PyObject *args)
 }
 
 static char quick_find_docs[] =
-    "quick_find(long, (tle_line0, tle_line1, tle_line2), (gs_lat, gs_lon, gs_alt))\n";
+    "quick_find((tle_line0, tle_line1, tle_line2), time, (gs_lat, gs_lon, gs_alt))\n";
 
 static PyObject* quick_predict(PyObject* self, PyObject *args)
 {
@@ -3549,11 +3549,11 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 }
 
 static char quick_predict_docs[] =
-    "quick_predict(long, (tle_line0, tle_line1, tle_line2), (gs_lat, gs_lon, gs_alt))\n";
+    "quick_predict((tle_line0, tle_line1, tle_line2), time, (gs_lat, gs_lon, gs_alt))\n";
 
 
 static PyMethodDef pypredict_funcs[] = {
-    {"quick_find"   , (PyCFunction)quick_find   , METH_VARARGS, quick_find},
+    {"quick_find"   , (PyCFunction)quick_find   , METH_VARARGS, quick_find_docs},
     {"quick_predict", (PyCFunction)quick_predict, METH_VARARGS, quick_predict_docs},
     {NULL, NULL, 0, NULL} 
 };
