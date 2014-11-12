@@ -24,13 +24,13 @@ sudo python setup.py install
 predict.quick_find(tle, epoch, qth)
 # \_ tle - array of strings (lines 0,1,2 of TLE)
 # \_ epoch - (optional, defaults: now) number of seconds since epoch (as float)
-# \_ qth - (optional, defaults: system) tuple of latitude (float), longitude (float), altitude (int)
+# \_ qth - (optional, defaults: system) tuple of (lat(N), long(W), alt(m)) (float, float, int)
 
 # Outputs the next pass of the satellite over the groundstation (throws exception if no pass)
 predict.quick_predict(tle, epoch, qth)
 # \_ tle - array of strings (lines 0,1,2 of TLE)
 # \_ epoch - (optional, defaults: now) number of seconds since epoch (as float)
-# \_ qth - (optional, defaults: system) tuple of latitude (float), longitude (float), altitude (int)
+# \_ qth - (optional, defaults: system) tuple of (lat(N), long(W), alt(m)) (float, float, int)
 
 ```
 ## Example
