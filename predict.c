@@ -3558,9 +3558,9 @@ static PyMethodDef pypredict_funcs[] = {
     {NULL, NULL, 0, NULL} 
 };
 
-void initpredict(void)
+void initcpredict(void)
 {
-    Py_InitModule3("predict", pypredict_funcs,
+    Py_InitModule3("cpredict", pypredict_funcs,
                    "Python port of the predict open source satellite tracking library");
 }
 
