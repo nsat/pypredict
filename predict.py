@@ -8,7 +8,7 @@ from cpredict import *
 def tle(norad_id):
 	res = urllib2.urlopen("http://tle.nanosatisfi.com/%s" % str(norad_id))
 	if res.getcode() != 200:
-		raise Exception("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)", res.getcode())
+		raise urllib2.HTTPError("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)" % res.getcode())
 	return res.read().rstrip()
 
 class Observer():
@@ -55,11 +55,14 @@ class PassGenerator():
 	def __iter__(self):
 		return self
 
+	# Python 3 compatibility
+	def __next__(self):
+		return self.next()
+
 	def next(self):
-		#print(self.time)
 		if self.qth:
 			p = Transit(quick_predict(self.tle, self.time, self.qth))
 		else:
 			p = Transit(quick_predict(self.tle, self.time))
-		self.time = p[-1]['epoch'] + 60	#TODO: Hack, need to advance past end of previous pass.  Lower numbers unreliable.
+		self.time = p.end_time() + 60	#TODO: Hack, need to advance past end of previous pass.  Lower numbers unreliable.
 		return p
