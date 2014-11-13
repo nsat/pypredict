@@ -1,9 +1,7 @@
 import time
 import urllib2
 from datetime import datetime
-
-# Pythonic?  Pickup quick_predict and quick_find from c extension and expose them.
-from cpredict import *
+from cpredict import quick_find, quick_predict
 
 def tle(norad_id):
 	res = urllib2.urlopen("http://tle.nanosatisfi.com/%s" % str(norad_id))
@@ -12,7 +10,7 @@ def tle(norad_id):
 	return res.read().rstrip()
 
 class Observer():
-	def __init__(self, tle, qth = None):
+	def __init__(self, tle, qth=None):
 		self.tle = tle.rstrip().split('\n')
 		self.qth = qth
 
@@ -47,7 +45,7 @@ class Transit():
 		return self.points[key]
 
 class PassGenerator():
-	def __init__(self, tle, ts = None, qth = None):
+	def __init__(self, tle, ts=None, qth=None):
 		self.tle  = tle
 		self.time = ts or time.time()
 		self.qth  = qth
