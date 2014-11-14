@@ -21,10 +21,7 @@ class Observer():
             return quick_find(self.tle, at)
 
     def passes(self, at = time.time()):
-        if self.qth:
-            return PassGenerator(self.tle, at, self.qth)
-        else:
-            return PassGenerator(self.tle, at)
+        return PassGenerator(self.tle, at, self.qth)
 
 # Transit is a thin wrapper around the array of dictionaries returned by cpredict.quick_predict
 class Transit():
