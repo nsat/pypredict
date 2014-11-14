@@ -62,5 +62,9 @@ class PassGenerator():
             p = Transit(quick_predict(self.tle, self.time, self.qth))
         else:
             p = Transit(quick_predict(self.tle, self.time))
-        self.time = p.end_time() + 60   #TODO: Hack, need to advance past end of previous pass.  Lower numbers unreliable.
+        #HACK: If the timestamp passed to quick_predict is within a pass (or within an unclear
+        #      delta of one of the endpoints, it will return that pass.  To generate the next
+        #      pass, we have to advance the requested time.  It's not clear how much of a buffer
+        #      we need, but the following seems to work.  Single-digits amounts weren't enough.
+        self.time = p.end_time() + 60
         return p
