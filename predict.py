@@ -49,7 +49,7 @@ class Observer():
         self.qth = (float(qth[0]), float(qth[1]), int(qth[2]))
 
     def observe(self, at = None):
-        at = at if at != None else time.time()
+        at = time.time() if (at is None) else at
         return quick_find(self.tle, at, self.qth)
 
     # Returns a generator of passes occuring entirely between 'start' and 'stop' (epoch)
