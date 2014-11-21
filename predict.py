@@ -97,4 +97,4 @@ class Transit():
         return "Transit%s"%(self.tle, self.qth, self.start, self.end).__repr__()
 
     def __str__(self):
-        return str((self.start, self.end, self.max_elevation(), self.duration()))
+        return str((self.start, self.end, self.at(self.peak())['elevation'], self.duration()))
