@@ -63,25 +63,28 @@ class Transit():
     # return timestamp within epsilon seconds of maximum elevation
     def peak(self, epsilon=0.1):
         crs =  (self.end + self.start)/2
-        step = (self.end - self.start)/4
+        step = (self.end - self.start)
         while (step > epsilon):
+            step /= 4
             # Ascend the gradient
             direction = None
             while True:
                 mid   = self.engine.observe(crs)['elevation']
                 left  = self.engine.observe(crs - step)['elevation']
                 right = self.engine.observe(crs + step)['elevation']
+                # Stop if left or right exceed transit window
+                if (((crs - step) <= self.start) or (self.end <= (crs + step))):
+                    break
                 # Stop if we're at a peak
                 if (left <= mid >= right):
                     break
                 gradient = -1 if (left > right) else 1
-                # Stop if we've passed a peak
+                # Stop if we've stepped over a peak
                 if direction and direction != gradient:
                     break
                 # Step towards the peak
                 direction = gradient
                 crs += (direction * step)
-            step /= 4
         return crs
 
     def duration(self):
