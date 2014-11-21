@@ -49,27 +49,47 @@ class Observer():
 # class (importers of the library may instantiate).  
 class Transit():
     def __init__(self, tle, qth, start, end):
-        self.observer = Observer(tle, qth)
+        self.engine = Observer(tle, qth)
         self.start = start
         self.end = end
         # Let Observer.__init__ handle ETL for us.  Re-use!
-        self.qth = self.observer.qth
-        self.tle = self.observer.tle
+        self.qth = self.engine.qth
+        self.tle = self.engine.tle
 
     # return the name of the satellite transiting
     def satellite(self):
-        return self.observer.tle[0]
+        return self.engine.tle[0]
 
-    def max_elevation(self):
-        #TODO: Optimize (or at least cache) this.  Also, sub-second granularity?
-        return max([self.observer.observe(t)['elevation'] for t in range(int(self.start), int(ceil(self.end)))])
+    # return timestamp within epsilon seconds of maximum elevation
+    def peak(self, epsilon=0.1):
+        crs =  (self.end + self.start)/2
+        step = (self.end - self.start)/4
+        while (step > epsilon):
+            # Ascend the gradient
+            direction = None
+            while True:
+                mid   = self.engine.observe(crs)['elevation']
+                left  = self.engine.observe(crs - step)['elevation']
+                right = self.engine.observe(crs + step)['elevation']
+                # Stop if we're at a peak
+                if (left <= mid >= right):
+                    break
+                gradient = -1 if (left > right) else 1
+                # Stop if we've passed a peak
+                if direction and direction != gradient:
+                    break
+                # Step towards the peak
+                direction = gradient
+                crs += (direction * step)
+            step /= 4
+        return crs
 
     def duration(self):
         return self.end - self.start
 
     def at(self, t):
         if self.start <= t <= self.end:
-            return self.observer.observe(timestamp)
+            return self.engine.observe(t)
         else:
             raise LookupError("time %f outside of transit window [%f, %f]" % (t, self.start, self.end))
 
