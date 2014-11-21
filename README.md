@@ -70,8 +70,8 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
     Instantiation parameters are parsed and made available as fields.
     <b>duration</b>()  
         Returns length of transit in seconds
-    <b>max_elevation</b>()  
-        Returns maximum elevation achieved during transit in degrees  
+    <b>peak</b>(<i>epsilon=0.1</i>)  
+        Returns time within epsilon seconds of when satellite achieves maximum elevation
     <b>satellite</b>()  
         Returns name of satellite from first line of TLE
     <b>at</b>(<i>timestamp</i>)  
