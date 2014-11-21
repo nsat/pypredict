@@ -68,6 +68,8 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 <b>Transit</b>(<i>tle, qth, start, end</i>)  
     Utility class representing a pass of a satellite over a groundstation.
     Instantiation parameters are parsed and made available as fields.
+    <b>points</b>(<i>step=15.0</i>)
+        Returns iterator of observations spaced <i>step</i> seconds apart.
     <b>duration</b>()  
         Returns length of transit in seconds
     <b>peak</b>(<i>epsilon=0.1</i>)  
