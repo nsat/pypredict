@@ -86,6 +86,14 @@ class Transit():
                 crs += (direction * step)
         return crs
 
+    # Generator that returns an observation every 'frequency' seconds
+    def points(self, frequency=15):
+        # Number of steps that fit within this pass
+        number = int(self.duration() / frequency)
+        offset = (self.duration() - (number * frequency))*2
+        for i in range(0, number):
+            yield self.at(self.start + offset + (i * frequency))
+
     def duration(self):
         return self.end - self.start
 
