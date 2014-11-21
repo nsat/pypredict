@@ -40,10 +40,10 @@ class Observer():
         ## ETL tle and qth data
         self.tle = tle.rstrip().split('\n') if isinstance(tle, basestring) else tle
         if isinstance(qth, basestring):
-            raw = open(path.expanduser(qth)).readlines()
-            lines = [l.strip() for l in raw]
-            assert len(lines) == 4, "qth file '%s' must contain exactly 4 lines (name, lat, long, alt)" % qth
-            qth = lines[1:] # remove name
+            with open(path.expanduser(qth)) as fp:
+                lines = [l.strip() for l in fp.readlines()]
+                assert len(lines) == 4, "qth file '%s' must contain exactly 4 lines (name, lat, long, alt)" % qth
+                qth = lines[1:] # remove name
         # Attempt conversion to format required for predict.quick_find
         assert len(qth) == 3, "qth must be (lat, long, alt) as (float, float, int)" 
         self.qth = (float(qth[0]), float(qth[1]), int(qth[2]))
@@ -52,18 +52,17 @@ class Observer():
         at = at if at != None else time.time()
         return quick_find(self.tle, at, self.qth)
 
-    # Returns a generator of passes occuring entirely between 'after' and 'before' (epoch)
-    def passes(self, after=None, before=None):
-        after = after or time.time()
-        crs = after
+    # Returns a generator of passes occuring entirely between 'start' and 'stop' (epoch)
+    def passes(self, start=None, stop=None):
+        start = time.time() if (start is None) else start
+        crs = start
         while True:
-            transit = quick_predict(self.tle, crs, self.qth[0:3])
-            start = transit[0]['epoch']
-            end = transit[-1]['epoch']
-            t = Transit(self.tle, self.qth, start, end) # un/repacking for convenient external API
-            if (before != None and before < t.end):
+            transit = quick_predict(self.tle, crs, self.qth)
+            # un/repacking for convenient external API
+            t = Transit(self.tle, self.qth, start=transit[0]['epoch'], end=transit[-1]['epoch']) 
+            if (stop != None and t.end > stop):
                 break
-            if (t.start > after):
+            if (t.start > start):
                 yield t
             # Need to advance time cursor sufficiently far so predict doesn't yield same pass
             crs = t.end + 60     #seconds seems to be sufficient
