@@ -1,13 +1,40 @@
+import os
 import time
 import urllib2
 from datetime import datetime
 from cpredict import quick_find, quick_predict
 
+class PredictException(Exception):
+    pass
+
 def tle(norad_id):
-    res = urllib2.urlopen("http://tle.nanosatisfi.com/%s" % str(norad_id))
-    if res.getcode() != 200:
-        raise urllib2.HTTPError("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)" % res.getcode())
-    return res.read().rstrip()
+    try:
+        res = urllib2.urlopen("http://tle.nanosatisfi.com/%s" % str(norad_id))
+        if res.getcode() != 200:
+            raise urllib2.HTTPError("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)" % res.getcode())
+        return res.read().rstrip()
+    except Exception as e:
+        raise PredictException(e)
+
+def qth(qth_path):
+    try:
+        qth_path = os.path.abspath(os.path.expanduser(qth_path))
+        with open(qth_path) as qthfile:
+            raw = [l.strip() for l in qthfile.readlines()]
+            assert len(raw) == 4, "qth file '%s' must contain exactly 4 lines (name, lat(N), long(W), alt(m))" % qth_path
+            # Attempt conversion to format required for predict.quick_find
+            return (float(raw[1]), float(raw[2]), int(raw[3]))
+    except IOError as e:
+        raise PredictException("Unable to open '%s' (%s)" % (qth_path, str(e)))
+    except AssertionError as e:
+        raise PredictException(str(e))
+    except ValueError as e:
+        raise PredictException("Unable to process '%s' (%s)" % (qth_path, str(e)))
+    except Exception as e:
+        raise PredictException(e)
+
+def host_qth():
+    return qth("~/.predict/predict.qth")
 
 class Observer():
     def __init__(self, tle, qth=None):
