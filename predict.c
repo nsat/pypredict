@@ -115,6 +115,9 @@
 #define VISIBLE_FLAG           0x002000
 #define SAT_ECLIPSED_FLAG      0x004000
 
+// Python Extension Globals
+static PyObject *CPredictError;
+
 /*
   TODO: This is a refactoring hack to ensure we get consistent before/after
         tests.  Freezes the clock to a specified time, making calculations 
@@ -3250,7 +3253,7 @@ double NextAOS()
 //       is convoluted and it's never come up in our usage.  FYI, the 'Edit Transponder Database'
 //       menu option is still marked "coming soon" :).  We'll add it back if there's demand.
 //
-void MakeObservation(double obs_time, struct observation * obs) {
+int MakeObservation(double obs_time, struct observation * obs) {
     char geostationary=0, aoshappens=0, decayed=0, visibility=0, sunlit;
     double doppler100=0.0, delay;
 
@@ -3259,8 +3262,8 @@ void MakeObservation(double obs_time, struct observation * obs) {
 
     if (sat_db.transponders>0)
     {
-        fprintf(stderr, "ERROR: This variant of predict does not support %s definition.", dbfile);
-        exit(-1);
+    	PyErr_SetString(CPredictError, "ERROR: This variant of predict does not support %s definition.", dbfile);
+        return -1;
     }
 
     daynum=obs_time;
@@ -3448,13 +3451,12 @@ static PyObject* quick_find(PyObject* self, PyObject *args)
 {
 	struct observation obs = { 0 };
 
-	if (load(args) != 0)
+	if (load(args) != 0 || MakeObservation(daynum, &obs) != 0)
 	{
-		// load will set the appropriate exception if it fails.
+		// load or MakeObservation will set appropriate exceptions if either fails.
 		return NULL;
 	}
 
-	MakeObservation(daynum, &obs);
 	return PythonifyObservation(&obs);
 }
 
@@ -3467,6 +3469,13 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	int lastel=0;
 	observation obs = { 0 };
 	PyObject* transit = PyList_New(0);
+
+	//TODO: Research reference counting practices
+	if (transit == NULL)
+	{
+		//PyList_new will create appropriate exception if it fails.
+		return NULL;
+	}
 
 	now=CurrentDaynum();
 
@@ -3513,20 +3522,17 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	/* Make Predictions */
 	daynum=FindAOS();
 	
-	//TODO: Research reference counting practices
-	if (transit == NULL)
-	{
-		printf("Failed to create list\n");
-		return NULL;
-	}
-
 	/* Construct the pass */
 	while (iel>=0)
 	{
-		MakeObservation(daynum, &obs);
+		if (MakeObservation(daynum, &obs) != 0)
+		{
+			return NULL;
+		}
+
 		if (PyList_Append(transit, PythonifyObservation(&obs)) != 0)
 		{
-			printf("Failed to append observation to list\n");
+			PyErr_SetString(SpamError, "Failed to append observation to list");
 			return NULL;
 		}
 		lastel=iel;
@@ -3537,7 +3543,12 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	if (lastel!=0)
 	{
 		daynum=FindLOS();
-		MakeObservation(daynum, &obs);
+
+		if (MakeObservation(daynum, &obs) != 0)
+		{
+			return NULL;
+		}
+
 		if (PyList_Append(transit, PythonifyObservation(&obs)) != 0)
 		{
 			printf("Failed to append observation to list\n");
@@ -3560,7 +3571,16 @@ static PyMethodDef pypredict_funcs[] = {
 
 void initcpredict(void)
 {
-    Py_InitModule3("cpredict", pypredict_funcs,
-                   "Python port of the predict open source satellite tracking library");
+	PyObject *m;
+	m = Py_InitModule3("cpredict", pypredict_funcs,
+					"Python port of the predict open source satellite tracking library");
+	if (m == NULL) {
+		fprintf(stderr, "ERROR: Unable to initialize python module 'cpredict'\n");
+	}
+
+	//Add custom exception for predict
+	CPredictError = PyErr_NewException("cpredict.error", NULL, NULL);
+	Py_INCREF(CPredictError);
+	PyModule_AddObject(m, "error", CPredictError);
 }
 
