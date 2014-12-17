@@ -102,4 +102,8 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
         Each observation is identical to that returned by <b>quick_find</b>.
 <b>tle</b>(<i>norad_id</i>)  
         Fetch the TLE for the given NORAD id from the spire tle service.
+        Throws a predict.PredictException if tle cannot be loaded.
+<b>host_qth</b>()
+        Parse and return the host qth file as a (lat(N), long(W), Alt(m)) tuple.
+        Throws a predict.PredictException if QTH cannot be loaded and parsed.
 </pre>
