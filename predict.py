@@ -41,7 +41,8 @@ class Observer():
         self.tle = tle.rstrip().split('\n')
         self.qth = qth
 
-    def observe(self, at = time.time()):
+    def observe(self, at = None):
+        at = at or time.time()
         if self.qth:
             return quick_find(self.tle, at, self.qth)
         else:
