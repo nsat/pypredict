@@ -2,10 +2,7 @@ import os
 import time
 import urllib2
 from datetime import datetime
-from cpredict import quick_find, quick_predict
-
-class PredictException(Exception):
-    pass
+from cpredict import quick_find, quick_predict, PredictException
 
 def tle(norad_id):
     try:
