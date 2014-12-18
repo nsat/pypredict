@@ -2428,8 +2428,8 @@ char ReadTLE(char *line0, char *line1, char *line2)
 	a = ((la == 0) || (la >= sizeof(sat.name)));
 	b = ((lb == 0) || (lb >= sizeof(sat.line1)));
 	c = ((lc == 0) || (lc >= sizeof(sat.line2)));
-	d = KepCheck(line1, line2);
-	error_flags = (a << 3) & (b << 2) & (c << 1) & (d << 0);
+	d = !KepCheck(line1, line2);
+	error_flags = (a << 3) | (b << 2) | (c << 1) | (d << 0);
 
 	if (error_flags == 0)
 	{
