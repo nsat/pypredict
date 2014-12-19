@@ -116,7 +116,7 @@
 #define SAT_ECLIPSED_FLAG      0x004000
 
 // Python Extension Globals
-static PyObject *Exception;
+static PyObject *PredictException;
 
 /*
   TODO: This is a refactoring hack to ensure we get consistent before/after
@@ -3258,7 +3258,7 @@ int MakeObservation(double obs_time, struct observation * obs) {
 
     if (sat_db.transponders>0)
     {
-        PyErr_SetString(Exception, "pypredict does not support transponder definition.");
+        PyErr_SetString(PredictException, "pypredict does not support transponder definition.");
         return -1;
     }
 
@@ -3396,7 +3396,7 @@ char load(PyObject *args)
 
 	if (ReadTLE(tle0,tle1,tle2) != 0)
 	{
-		PyErr_SetString(Exception, "Unable to process TLE");
+		PyErr_SetString(PredictException, "Unable to process TLE");
 		return -1;
 	}
 
@@ -3426,7 +3426,7 @@ char load(PyObject *args)
 			fscanf(fd,"%d", &qth.stnalt);
 			fclose(fd);
 		} else {
-			PyErr_SetString(Exception, "QTH file could not be loaded.");
+			PyErr_SetString(PredictException, "QTH file could not be loaded.");
 			return -1;
 		}
 	}
@@ -3459,13 +3459,11 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	double now;
 	int lastel=0;
 	observation obs = { 0 };
-	PyObject* transit = PyList_New(0);
 
-	//TODO: Research reference counting practices
+	PyObject* transit = PyList_New(0);
 	if (transit == NULL)
 	{
-		//PyList_New will set appropriate exception string if it fails.
-		return NULL;
+		goto cleanup_and_raise_exception;
 	}
 
 	now=CurrentDaynum();
@@ -3473,14 +3471,14 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	if (load(args) != 0)
 	{
 		// load will set the appropriate exception string if it fails.
-		return NULL;
+		goto cleanup_and_raise_exception;
 	}
 
 	//TODO: Seems like this should be based on the freshness of the TLE, not wall clock.
 	if ((daynum<now-365.0) || (daynum>now+365.0))
 	{
-		PyErr_SetString(Exception, "Start must be within one year of current date.\n");
-		return NULL;
+		PyErr_SetString(PredictException, "Start must be within one year of current date.\n");
+		goto cleanup_and_raise_exception;
 	}
 
 	PreCalc(0);
@@ -3488,43 +3486,49 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	if (MakeObservation(daynum, &obs) != 0)
 	{
 		// MakeObservation will set appropriate exception string
-		return NULL;
+		goto cleanup_and_raise_exception;
 	}
 
 	if (!AosHappens(0))
 	{
-		PyErr_SetString(Exception, "No AOS.  This satellite does not rise above horizon.\n");
-		return NULL;
+		PyErr_SetString(PredictException, "No AOS.  This satellite does not rise above horizon.\n");
+		goto cleanup_and_raise_exception;
 	}
 
 	if (Geostationary(0)!=0)
 	{
-		PyErr_SetString(Exception, "Cannot calculate passes for geostationary satellites.\n");
-		return NULL;
+		PyErr_SetString(PredictException, "Cannot calculate passes for geostationary satellites.\n");
+		goto cleanup_and_raise_exception;
 	}
 
 	if (Decayed(indx,daynum)!=0)
 	{
-		PyErr_SetString(Exception, "Satellite has decayed.  Cannot calculate transit.\n");
-		return NULL;
+		PyErr_SetString(PredictException, "Satellite has decayed.  Cannot calculate transit.\n");
+		goto cleanup_and_raise_exception;
 	}
 
 	/* Make Predictions */
 	daynum=FindAOS();
 	
 	/* Construct the pass */
+	PyObject * py_obs;
 	while (iel>=0)
 	{
 		if (MakeObservation(daynum, &obs) != 0)
 		{
 			//MakeObservation will set appropriate exception string
-			return NULL;
+			goto cleanup_and_raise_exception;
 		}
 
-		if (PyList_Append(transit, PythonifyObservation(&obs)) != 0)
+		py_obs = PythonifyObservation(&obs);
+		if (py_obs == NULL) {
+			//PythonifyObservation will set appropriate exception string
+			goto cleanup_and_raise_exception;
+		}
+
+		if (PyList_Append(transit, py_obs) != 0)
 		{
-			PyErr_SetString(Exception, "Failed to append observation to list");
-			return NULL;
+			goto cleanup_and_raise_exception;
 		}
 		lastel=iel;
 		daynum+=cos((sat_ele-1.0)*deg2rad)*sqrt(sat_alt)/25000.0;
@@ -3537,17 +3541,25 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 
 		if (MakeObservation(daynum, &obs) != 0)
 		{
-			return NULL;
+			goto cleanup_and_raise_exception;
 		}
 
-		if (PyList_Append(transit, PythonifyObservation(&obs)) != 0)
+		py_obs = PythonifyObservation(&obs);
+		if (py_obs == NULL) {
+			goto cleanup_and_raise_exception;
+		}
+
+		if (PyList_Append(transit, py_obs) != 0)
 		{
-			PyErr_SetString(Exception, "Failed to append observation to list");
-			return NULL;
+			goto cleanup_and_raise_exception;
 		}
 	}
 
 	return transit;
+
+cleanup_and_raise_exception:
+	Py_XDECREF(transit);
+	return NULL;
 }
 
 static char quick_predict_docs[] =
@@ -3569,8 +3581,8 @@ void initcpredict(void)
 	}
 
 	//Add custom exception for predict
-	Exception = PyErr_NewException("cpredict.PredictException", NULL, NULL);
-	Py_INCREF(Exception);
-	PyModule_AddObject(m, "PredictException", Exception);
+	PredictException = PyErr_NewException("cpredict.PredictException", NULL, NULL);
+	Py_INCREF(PredictException);
+	PyModule_AddObject(m, "PredictException", PredictException);
 }
 
