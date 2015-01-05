@@ -9,13 +9,18 @@ We aim for result-parity and it should produce identical values on the same inpu
 If you think you've found an error, please include predict's differing output in the bug report.
 If you think you've found a bug in predict, please report and we'll coordinate with upstream.
 ### Installation
-```
+
+```bash
 sudo apt-get install python-dev
 sudo python setup.py install
 ```
+
 ## Usage
+
 PyPredict provides some high level primitives for generating passes along with direct calls to the underlying pass prediction and satellite position calculations.
+
 #### Observe a satellite (relative to a position on earth)
+
 ```python
 import predict
 tle = predict.tle(40044)
@@ -47,18 +52,23 @@ o.observe()               # optional time argument defaults to time.time()
 ```
 
 #### Show upcoming passes of satellite over groundstation
-```
+
+```python
 p = o.passes()
 for i in range(1,10):
 	transit = p.next()
 	print("%f\t%f\t%f" % (transit.start, transit.duration(), transit.peak()['elevation']))
 ```
+
 #### Call predict functions directly
-```
+
+```python
 predict.quick_find(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ```
+
 ##API
+
 <pre>
 <b>tle</b>(<i>norad_id</i>)  
         Fetch the TLE for the given NORAD id from the spire tle service.
