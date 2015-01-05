@@ -73,9 +73,11 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 <b>tle</b>(<i>norad_id</i>)  
         Fetch the TLE for the given NORAD id from the spire tle service.
         Throws a predict.PredictException if tle cannot be loaded.
+
 <b>host_qth</b>()
         Parse and return the host qth file as a (lat(N), long(W), Alt(m)) tuple.
         Throws a predict.PredictException if QTH cannot be loaded and parsed.
+
 <b>Observer</b>(<i>tle[, (lat, long, alt)]</i>)  
     <b>observe</b>(<i>[time]</i>)  
         Return an observation of the satellite via <b>quick_find</b>(<i>tle, time, qth</i>)  
@@ -84,6 +86,7 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
         Returns iterator of <b>Transit</b>'s that overlap [start, end].
         If <i>start</i> is not defined, it defaults to current time  
         If <i>end</i> is not defined, the iterator will yield passes until the orbit decays  
+
 <b>Transit</b>(<i>tle, qth, start, end</i>)  
     Utility class representing a pass of a satellite over a groundstation.
     Instantiation parameters are parsed and made available as fields.
@@ -95,6 +98,7 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
         Returns observation at maximum elevation (+/- ~<i>epsilon</i> seconds)
     <b>at</b>(<i>timestamp</i>)  
         Returns observation from <b>Observer</b>(<i>tle, qth</i>).observe(<i>timestamp</i>)
+
 <b>quick_find</b>(<i>tle[, time[, (lat, long, alt)]]</i>)  
     <i>time</i> defaults to now   
     <i>(lat, long, alt)</i> defaults to values in ~/.predict/predict.qth  
@@ -120,6 +124,7 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
         <i>orbital_phase</i> : refer to predict documentation  
         <i>eclipse_depth</i> : refer to predict documentation  
         <i>orbital_velocity</i> : refer to predict documentation  
+        
 <b>quick_predict</b>(<i>tle[, time[, (lat, long, alt)]]</i>)  
         Returns an array of observations for the next pass as calculated by predict.
         Each observation is identical to that returned by <b>quick_find</b>.
