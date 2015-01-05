@@ -50,8 +50,8 @@ o.observe()               # optional time argument defaults to time.time()
 ```
 p = o.passes()
 for i in range(1,10):
-	np = p.next()
-	print("%f\t%f\t%f" % (np.start_time(), np.end_time() - np.start_time(), np.max_elevation()))
+	transit = p.next()
+	print("%f\t%f\t%f" % (transit.start, transit.duration(), transit.peak()['elevation']))
 ```
 #### Call predict functions directly
 ```
@@ -60,11 +60,20 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ```
 ##API
 <pre>
+<b>tle</b>(<i>norad_id</i>)  
+        Fetch the TLE for the given NORAD id from the spire tle service.
+        Throws a predict.PredictException if tle cannot be loaded.
+<b>host_qth</b>()
+        Parse and return the host qth file as a (lat(N), long(W), Alt(m)) tuple.
+        Throws a predict.PredictException if QTH cannot be loaded and parsed.
 <b>Observer</b>(<i>tle[, (lat, long, alt)]</i>)  
     <b>observe</b>(<i>[time]</i>)  
         Return an observation of the satellite via <b>quick_find</b>(<i>tle, time, qth</i>)  
-    <b>passes</b>(<i>[time]</i>)  
-        Returns iterator of <b>Transit</b>'s of <i>tle</i> over (<i>lat, long, alt</i>)
+        If <i>time</i> is not defined, it defaults to current time  
+    <b>passes</b>(<i>[start, [end]]</i>)  
+        Returns iterator of <b>Transit</b>'s that overlap [start, end].
+        If <i>start</i> is not defined, it defaults to current time  
+        If <i>end</i> is not defined, the iterator will yield passes until the orbit decays  
 <b>Transit</b>(<i>tle, qth, start, end</i>)  
     Utility class representing a pass of a satellite over a groundstation.
     Instantiation parameters are parsed and made available as fields.
@@ -73,9 +82,7 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
     <b>duration</b>()  
         Returns length of transit in seconds
     <b>peak</b>(<i>epsilon=0.1</i>)  
-        Returns time within epsilon seconds of when satellite achieves maximum elevation
-    <b>satellite</b>()  
-        Returns name of satellite from first line of TLE
+        Returns observation at maximum elevation (+/- ~<i>epsilon</i> seconds)
     <b>at</b>(<i>timestamp</i>)  
         Returns observation from <b>Observer</b>(<i>tle, qth</i>).observe(<i>timestamp</i>)
 <b>quick_find</b>(<i>tle[, time[, (lat, long, alt)]]</i>)  
@@ -106,10 +113,4 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 <b>quick_predict</b>(<i>tle[, time[, (lat, long, alt)]]</i>)  
         Returns an array of observations for the next pass as calculated by predict.
         Each observation is identical to that returned by <b>quick_find</b>.
-<b>tle</b>(<i>norad_id</i>)  
-        Fetch the TLE for the given NORAD id from the spire tle service.
-        Throws a predict.PredictException if tle cannot be loaded.
-<b>host_qth</b>()
-        Parse and return the host qth file as a (lat(N), long(W), Alt(m)) tuple.
-        Throws a predict.PredictException if QTH cannot be loaded and parsed.
 </pre>
