@@ -82,6 +82,7 @@ class Transit():
         self.tle = self.engine.tle
 
     # return observation within epsilon seconds of maximum elevation
+    # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
     def peak(self, epsilon=0.1):
         ts =  (self.end + self.start)/2
         step = (self.end - self.start)

@@ -107,7 +107,7 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
         <i>name</i> : name of satellite from first line of TLE.  
         <i>epoch</i> : time of observation in seconds (unix epoch)  
         <i>azimuth</i> : azimuth of satellite in degrees relative to groundstation.  
-        <i>altitude</i> : altitude of satellite in degrees relative to groundstation.  
+        <i>elevation</i> : elevation of satellite in degrees relative to groundstation.  
         <i>slant_range</i> : distance to satellite from groundstation in meters.  
         <i>sunlit</i> : 1 if satellite is in sunlight, 0 otherwise.  
         <i>decayed</i>: 1 if satellite has decayed out of orbit, 0 otherwise.  
