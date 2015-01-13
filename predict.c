@@ -3490,21 +3490,25 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
+	char errbuff[100];
 	if (!AosHappens(0))
 	{
-		PyErr_SetString(PredictException, "No AOS.  This satellite does not rise above horizon.\n");
+		sprintf(errbuff, "%lu does not rise above horizon. No AOS.\n", sat.catnum);
+		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
 	if (Geostationary(0)!=0)
 	{
-		PyErr_SetString(PredictException, "Cannot calculate passes for geostationary satellites.\n");
+		sprintf(errbuff, "%lu is geostationary.  Does not transit.\n", sat.catnum);
+		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
 	if (Decayed(indx,daynum)!=0)
 	{
-		PyErr_SetString(PredictException, "Satellite has decayed.  Cannot calculate transit.\n");
+		sprintf(errbuff, "%lu has decayed. Cannot calculate transit.\n", sat.catnum);
+		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
