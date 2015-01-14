@@ -17,13 +17,7 @@ def massage_tle(tle):
 
 def massage_qth(qth):
     try:
-        # QTH may or may not have been converted into 3-tuple
-        if isinstance(qth, basestring):
-            qth = qth.rstrip().split('\n')
-            assert len(qth) == 4, "'%s' must contain exactly 4 lines: name, lat(N), long(W), alt(m)" % qth
-            qth = qth[1:] # remove name
         assert len(qth) == 3, "%s must consist of exactly three elements: (lat(N), long(W), alt(m))" % qth
-        # Attempt conversion to format required for predict.quick_find
         return (float(qth[0]), float(qth[1]), int(qth[2]))
     except ValueError as e:
         raise PredictException("Unable to convert '%s' (%s)" % (qth, str(e)))
@@ -61,9 +55,6 @@ class Transit():
         self.start = start
         self.end = end
 
-    def __str__(self):
-        return "Transit:" + str({ "start":self.start, "end":self.end, "peak":self.peak()})
-
     # return observation within epsilon seconds of maximum elevation
     # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
     def peak(self, epsilon=0.1):
@@ -94,15 +85,6 @@ class Transit():
                 # Step towards the peak
                 ts = next_ts
         return self.at(ts)
-
-    # Generator that returns an observation every 'step' seconds
-    def points(self, step=15.0):
-        # Number of steps that fit within this pass
-        count = int(self.duration() / step)
-        # Center the observations over the interval
-        offset = (self.duration() - (count * step))/2
-        for i in range(0, count):
-            yield self.at(self.start + offset + (i * step))
 
     def duration(self):
         return self.end - self.start
