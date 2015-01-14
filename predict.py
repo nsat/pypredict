@@ -65,9 +65,9 @@ class Transit():
             # Ascend the gradient at this step size
             direction = None
             while True:
-                mid   = self.engine.observe(ts)['elevation']
-                left  = self.engine.observe(ts - step)['elevation']
-                right = self.engine.observe(ts + step)['elevation']
+                mid   = observe(self.tle, self.qth, ts)['elevation']
+                left  = observe(self.tle, self.qth, ts - step)['elevation']
+                right = observe(self.tle, self.qth, ts + step)['elevation']
                 # Break if we're at a peak
                 if (left <= mid >= right):
                     break
@@ -92,5 +92,5 @@ class Transit():
     def at(self, t):
         if t < self.start or t > self.end:
             raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
-        return self.engine.observe(t)
+        return observe(self.tle, self.qth, t)
         
