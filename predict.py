@@ -1,7 +1,4 @@
-import os
 import time
-import urllib2
-from os import path
 from cpredict import quick_find, quick_predict, PredictException
 
 def massage_tle(tle):
