@@ -23,38 +23,40 @@ PyPredict provides some high level primitives for generating passes along with d
 
 ```python
 import predict
-tle = predict.tle(40044)
-o = predict.Observer(tle) # optional (lat, long, alt) argument
-o.observe()               # optional time argument defaults to time.time()
+tle = """0 LEMUR 1
+1 40044U 14033AL  15013.74135905  .00002013  00000-0  31503-3 0  6119
+2 40044 097.9584 269.2923 0059425 258.2447 101.2095 14.72707190 30443"""
+qth = (37.771034, 122.413815, 7)  # lat (N), long (W), alt (meters)
+loc = predict.observe(tle, qth) # optional time argument defaults to time.time()
 # => {
-  'altitude': 719.8973016015207,
-  'azimuth': 192.95630630260538,
   'decayed': 0,
-  'doppler': 932.5572349440811,
-  'eclipse_depth': -67.51645147097173,
-  'elevation': -53.48611284388438,
-  'epoch': 1415903990.986349,
-  'footprint': 5794.924485669611,
-  'geostationary': 0,
-  'has_aos': 1,
-  'latitude': -66.68928281112146,
-  'longitude': 255.62216756334112,
+  'elevation': -41.35311129599831,
   'name': '0 LEMUR 1',
   'norad_id': 40044,
-  'orbit': 2147,
+  'altitude': 640.7111771881182,
+  'orbit': 3048,
+  'longitude': 317.1566472306673,
+  'sunlit': 0,
+  'geostationary': 0,
+  'footprint': 5492.870800739669,
+  'epoch': 1421197860.582528,
+  'doppler': -777.9630509272195,
+  'visibility': 'N',
+  'azimuth': 104.54206601988983,
+  'latitude': -10.614365448199932,
   'orbital_model': 'SGP4',
-  'orbital_phase': 141.91263884508973,
-  'orbital_velocity': 26900.11489717512,
-  'slant_range': 11076.219591527988,
-  'sunlit': 1,
-  'visibility': 'D'
- }
+  'orbital_phase': 208.99510848736426,
+  'eclipse_depth': 23.38122135548474,
+  'slant_range': 9338.612365004446,
+  'has_aos': 1,
+  'orbital_velocity': 27165.627315567013
+}
 ```
 
 #### Show upcoming passes of satellite over groundstation
 
 ```python
-p = o.passes()
+p = predict.passes(tle, qth)
 for i in range(1,10):
 	transit = p.next()
 	print("%f\t%f\t%f" % (transit.start, transit.duration(), transit.peak()['elevation']))
@@ -70,22 +72,13 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ##API
 
 <pre>
-<b>tle</b>(<i>norad_id</i>)  
-        Fetch the TLE for the given NORAD id from the spire tle service.
-        Throws a predict.PredictException if tle cannot be loaded.
-
-<b>host_qth</b>()
-        Parse and return the host qth file as a (lat(N), long(W), Alt(m)) tuple.
-        Throws a predict.PredictException if QTH cannot be loaded and parsed.
-
-<b>Observer</b>(<i>tle[, (lat, long, alt)]</i>)  
-    <b>observe</b>(<i>[time]</i>)  
-        Return an observation of the satellite via <b>quick_find</b>(<i>tle, time, qth</i>)  
-        If <i>time</i> is not defined, it defaults to current time  
-    <b>passes</b>(<i>[start, [end]]</i>)  
-        Returns iterator of <b>Transit</b>'s that overlap [start, end].
-        If <i>start</i> is not defined, it defaults to current time  
-        If <i>end</i> is not defined, the iterator will yield passes until the orbit decays  
+<b>observe</b>(<i>tle</i>, (<i>lat_n, long_w, alt</i>)[, <i>at=None</i>])  
+    Return an observation of the satellite via <b>quick_find</b>(<i>tle, time, qth</i>)  
+    If <i>at</i> is not defined, defaults to current time (time.time())
+<b>transits</b>(<i>tle, qth, ending_after=None</i>])  
+    Returns iterator of <b>Transit</b>'s that overlap [start, end].
+    If <i>start</i> is not defined, it defaults to current time  
+    If <i>end</i> is not defined, the iterator will yield passes until the orbit decays  
 
 <b>Transit</b>(<i>tle, qth, start, end</i>)  
     Utility class representing a pass of a satellite over a groundstation.

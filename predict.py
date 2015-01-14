@@ -4,15 +4,6 @@ import urllib2
 from os import path
 from cpredict import quick_find, quick_predict, PredictException
 
-def tle(sat_id):
-    try:
-        res = urllib2.urlopen("http://tle.nanosatisfi.com/%s" % str(sat_id))
-        if res.getcode() != 200:
-            raise urllib2.HTTPError("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)" % res.getcode())
-        return res.read().rstrip()
-    except Exception as e:
-        raise PredictException(e)
-
 def massage_tle(tle):
     try:
         # TLE may or may not have been split into lines already
@@ -39,47 +30,36 @@ def massage_qth(qth):
     except Exception as e:
         raise PredictException(e)
 
-def host_qth():
-    try:
-        qth_path = os.path.abspath(os.path.expanduser("~/.predict/predict.qth"))
-        with open(qth_path) as qthfile:
-            return massage_qth(qthfile.read())
-    except IOError as e:
-        raise PredictException("Unable to open '%s' (%s)" % (qth_path, str(e)))
+def observe(tle, qth, at=None):
+    tle = massage_tle(tle)
+    qth = massage_qth(qth)
+    if at is None:
+        at = time.time()
+    return quick_find(tle, at, qth)
 
-class Observer():
-    def __init__(self, tle, qth=None):
-        self.qth = host_qth() if (qth is None) else massage_qth(qth)
-        self.tle = massage_tle(tle)
-
-    def observe(self, at=None):
-        at = time.time() if (at is None) else at
-        return quick_find(self.tle, at, self.qth)
-
-    # Returns a generator of transits that overlap the 'start' to 'stop' time interval
-    def passes(self, start=None, stop=None):
-        start = time.time() if (start is None) else start
-        ts = start
-        while True:
-            transit = quick_predict(self.tle, ts, self.qth)
-            t = Transit(self.tle, self.qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
-            if (stop != None and t.start >= stop):
-                break
-            if (t.end > start):
-                yield t
-            # Need to advance time cursor so predict doesn't yield same pass
-            ts = t.end + 60     #seconds seems to be sufficient
+def transits(tle, qth, ending_after=None, ending_before=None):
+    tle = massage_tle(tle)
+    qth = massage_qth(qth)
+    if ending_before is None:
+        ending_before = time.time()
+    ts = ending_before
+    while True:
+        transit = quick_predict(tle, ts, qth)
+        t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
+        if (ending_before != None and t.end > ending_before):
+            break
+        if (t.end > ending_after):
+            yield t
+        # Need to advance time cursor so predict doesn't yield same pass
+        ts = t.end + 60     #seconds seems to be sufficient
 
 # Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit():
     def __init__(self, tle, qth, start, end):
-        self.end = end
+        self.tle = massage_tle(tle)
+        self.qth = massage_qth(qth)
         self.start = start
-        # tle & qth may not be valid here (since library importer can instantiate a Transit)
-        # We re-use the Observer class to perform input conversion
-        self.engine = Observer(tle, qth)
-        self.qth = self.engine.qth
-        self.tle = self.engine.tle
+        self.end = end
 
     # return observation within epsilon seconds of maximum elevation
     # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
@@ -125,10 +105,7 @@ class Transit():
         return self.end - self.start
 
     def at(self, t):
-        if self.start <= t <= self.end:
-            return self.engine.observe(t)
-        else:
-            raise LookupError("time %f outside of transit window [%f, %f]" % (t, self.start, self.end))
-
-    def __str__(self):
-        return str((self.start, self.end, self.peak()['elevation'], self.duration()))
+        if t < self.start or t > self.end:
+            raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
+        return self.engine.observe(t)
+        
