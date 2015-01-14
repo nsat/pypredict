@@ -30,7 +30,6 @@ class TestPredict(unittest.TestCase):
 
     # should not raise a StopIteration
     next_transit = next(predict.transits(tle, qth, ending_after=at))
-    print next_transit
 
 
 if __name__ == '__main__':
