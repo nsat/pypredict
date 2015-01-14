@@ -40,9 +40,9 @@ def observe(tle, qth, at=None):
 def transits(tle, qth, ending_after=None, ending_before=None):
     tle = massage_tle(tle)
     qth = massage_qth(qth)
-    if ending_before is None:
-        ending_before = time.time()
-    ts = ending_before
+    if ending_after is None:
+        ending_after = time.time()
+    ts = ending_after
     while True:
         transit = quick_predict(tle, ts, qth)
         t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
@@ -60,6 +60,9 @@ class Transit():
         self.qth = massage_qth(qth)
         self.start = start
         self.end = end
+
+    def __str__(self):
+        return "Transit:" + str({ "start":self.start, "end":self.end, "peak":self.peak()})
 
     # return observation within epsilon seconds of maximum elevation
     # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
