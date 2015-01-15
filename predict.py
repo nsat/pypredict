@@ -1,92 +1,93 @@
-import os
 import time
-import urllib2
-from datetime import datetime
 from cpredict import quick_find, quick_predict, PredictException
 
-def tle(norad_id):
+def massage_tle(tle):
     try:
-        res = urllib2.urlopen("http://tle.nanosatisfi.com/%s" % str(norad_id))
-        if res.getcode() != 200:
-            raise urllib2.HTTPError("Unable to retrieve TLE from tle.nanosatisfi.com. HTTP code(%s)" % res.getcode())
-        return res.read().rstrip()
+        # TLE may or may not have been split into lines already
+        if isinstance(tle, basestring):
+            tle = tle.rstrip().split('\n')
+        assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
+        return tle
+        #TODO: print a warning if TLE is 'too' old
     except Exception as e:
         raise PredictException(e)
 
-def qth(qth_path):
+def massage_qth(qth):
     try:
-        qth_path = os.path.abspath(os.path.expanduser(qth_path))
-        with open(qth_path) as qthfile:
-            raw = [l.strip() for l in qthfile.readlines()]
-            assert len(raw) == 4, "qth file '%s' must contain exactly 4 lines (name, lat(N), long(W), alt(m))" % qth_path
-            # Attempt conversion to format required for predict.quick_find
-            return (float(raw[1]), float(raw[2]), int(raw[3]))
-    except IOError as e:
-        raise PredictException("Unable to open '%s' (%s)" % (qth_path, str(e)))
-    except AssertionError as e:
-        raise PredictException(str(e))
+        assert len(qth) == 3, "%s must consist of exactly three elements: (lat(N), long(W), alt(m))" % qth
+        return (float(qth[0]), float(qth[1]), int(qth[2]))
     except ValueError as e:
-        raise PredictException("Unable to process '%s' (%s)" % (qth_path, str(e)))
+        raise PredictException("Unable to convert '%s' (%s)" % (qth, str(e)))
     except Exception as e:
         raise PredictException(e)
 
-def host_qth():
-    return qth("~/.predict/predict.qth")
+def observe(tle, qth, at=None):
+    tle = massage_tle(tle)
+    qth = massage_qth(qth)
+    if at is None:
+        at = time.time()
+    return quick_find(tle, at, qth)
 
-class Observer():
-    def __init__(self, tle, qth=None):
-        self.tle = tle.rstrip().split('\n')
-        self.qth = qth
+def transits(tle, qth, ending_after=None, ending_before=None):
+    tle = massage_tle(tle)
+    qth = massage_qth(qth)
+    if ending_after is None:
+        ending_after = time.time()
+    ts = ending_after
+    while True:
+        transit = quick_predict(tle, ts, qth)
+        t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
+        if (ending_before != None and t.end > ending_before):
+            break
+        if (t.end > ending_after):
+            yield t
+        # Need to advance time cursor so predict doesn't yield same pass
+        ts = t.end + 60     #seconds seems to be sufficient
 
-    def observe(self, at=None):
-        at = at or time.time()
-        if self.qth:
-            return quick_find(self.tle, at, self.qth)
-        else:
-            return quick_find(self.tle, at)
-
-    def passes(self, at = time.time()):
-        return PassGenerator(self.tle, at, self.qth)
-
-# Transit is a thin wrapper around the array of dictionaries returned by cpredict.quick_predict
+# Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit():
-    def __init__(self, observations):
-        self.points = observations
+    def __init__(self, tle, qth, start, end):
+        self.tle = massage_tle(tle)
+        self.qth = massage_qth(qth)
+        self.start = start
+        self.end = end
 
-    def start_time(self):
-        return self.points[0]['epoch']
+    # return observation within epsilon seconds of maximum elevation
+    # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
+    def peak(self, epsilon=0.1):
+        ts =  (self.end + self.start)/2
+        step = (self.end - self.start)
+        while (step > epsilon):
+            step /= 4
+            # Ascend the gradient at this step size
+            direction = None
+            while True:
+                mid   = observe(self.tle, self.qth, ts)['elevation']
+                left  = observe(self.tle, self.qth, ts - step)['elevation']
+                right = observe(self.tle, self.qth, ts + step)['elevation']
+                # Break if we're at a peak
+                if (left <= mid >= right):
+                    break
+                # Ascend up slope
+                slope = -1 if (left > right) else 1
+                # Break if we stepped over a peak (switched directions)
+                if direction is None:
+                    direction = slope
+                if direction != slope:
+                    break
+                # Break if stepping would take us outside of transit
+                next_ts = ts + (direction * step)
+                if (next_ts < self.start) or (next_ts > self.end):
+                    break
+                # Step towards the peak
+                ts = next_ts
+        return self.at(ts)
 
-    def end_time(self):
-        return self.points[-1]['epoch']
+    def duration(self):
+        return self.end - self.start
 
-    # TODO: Verify quick_predict returns observation at peak of transit
-    def max_elevation(self):
-        return max([p['elevation'] for p in self.points])
-
-    def __getitem__(self, key):
-        return self.points[key]
-
-class PassGenerator():
-    def __init__(self, tle, ts=None, qth=None):
-        self.tle  = tle
-        self.time = ts or time.time()
-        self.qth  = qth
-
-    def __iter__(self):
-        return self
-
-    # Python 3 compatibility
-    def __next__(self):
-        return self.next()
-
-    def next(self):
-        if self.qth:
-            p = Transit(quick_predict(self.tle, self.time, self.qth))
-        else:
-            p = Transit(quick_predict(self.tle, self.time))
-        #HACK: If the timestamp passed to quick_predict is within a pass (or within an unclear
-        #      delta of one of the endpoints, it will return that pass.  To generate the next
-        #      pass, we have to advance the requested time.  It's not clear how much of a buffer
-        #      we need, but the following seems to work.  Single-digits amounts weren't enough.
-        self.time = p.end_time() + 60
-        return p
+    def at(self, t):
+        if t < self.start or t > self.end:
+            raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
+        return observe(self.tle, self.qth, t)
+        
