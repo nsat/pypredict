@@ -3543,20 +3543,25 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	if (lastel!=0)
 	{
 		daynum=FindLOS();
-
-		if (MakeObservation(daynum, &obs) != 0)
-		{
-			goto cleanup_and_raise_exception;
-		}
-
-		py_obs = PythonifyObservation(&obs);
-		if (py_obs == NULL) {
-			goto cleanup_and_raise_exception;
-		}
-
-		if (PyList_Append(transit, py_obs) != 0)
-		{
-			goto cleanup_and_raise_exception;
+		//TODO: FindLOS can fail.  Detect and log warning that transit end is approximate.	
+		if (daynum > 0) {
+			Calc();
+	
+			if (MakeObservation(daynum, &obs) != 0)
+			{
+				goto cleanup_and_raise_exception;
+			}
+			printf("constructing transit: this observation at daynum: %f epoch: %f\n", daynum, obs.epoch);
+	
+			py_obs = PythonifyObservation(&obs);
+			if (py_obs == NULL) {
+				goto cleanup_and_raise_exception;
+			}
+	
+			if (PyList_Append(transit, py_obs) != 0)
+			{
+				goto cleanup_and_raise_exception;
+			}
 		}
 	}
 
