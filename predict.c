@@ -3551,7 +3551,6 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 			{
 				goto cleanup_and_raise_exception;
 			}
-			printf("constructing transit: this observation at daynum: %f epoch: %f\n", daynum, obs.epoch);
 	
 			py_obs = PythonifyObservation(&obs);
 			if (py_obs == NULL) {
