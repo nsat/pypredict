@@ -83,6 +83,41 @@ class Transit():
                 ts = next_ts
         return self.at(ts)
 
+    # Return portion of transit above a certain elevation
+    def above(self, elevation):
+        return self.prune(lambda ts: self.at(ts)['elevation'] >= elevation)
+
+    # Return section of a transit where a pruning function is valid.
+    # Currently used to set elevation threshold, could also be used for site-specific horizon masks.
+    # fx must either return false everywhere or true for a contiguous period including the peak
+    def prune(self, fx, epsilon=0.1):
+        peak = self.peak()['epoch']
+        if not fx(peak):
+            return Transit(self.tle, self.qth, peak, peak)
+        if fx(self.start):
+            start = self.start
+        else:
+            left, right = self.start, peak
+            while ((right - left) > epsilon):
+                mid = (left + right)/2
+                if fx(mid):
+                    right = mid
+                else:
+                    left = mid
+            start = right
+        if fx(self.end):
+            end = self.end
+        else:
+            left, right = peak, self.end
+            while ((right - left) > epsilon):
+                mid = (left + right)/2
+                if fx(mid):
+                    left = mid
+                else:
+                    right = mid
+            end = left
+        return Transit(self.tle, self.qth, start, end)
+
     def duration(self):
         return self.end - self.start
 
