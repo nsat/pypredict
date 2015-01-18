@@ -3459,6 +3459,7 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 {
 	double now;
 	int lastel=0;
+	char errbuff[100];
 	observation obs = { 0 };
 
 	PyObject* transit = PyList_New(0);
@@ -3478,7 +3479,8 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	//TODO: Seems like this should be based on the freshness of the TLE, not wall clock.
 	if ((daynum<now-365.0) || (daynum>now+365.0))
 	{
-		PyErr_SetString(PredictException, "Start must be within one year of current date.\n");
+		sprintf(errbuff, "calculation date invalid: |calc - now| < 365 (%f)\n", daynum-now);
+		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
@@ -3490,7 +3492,6 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	char errbuff[100];
 	if (!AosHappens(0))
 	{
 		sprintf(errbuff, "%lu does not rise above horizon. No AOS.\n", sat.catnum);
