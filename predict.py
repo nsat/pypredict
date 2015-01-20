@@ -1,5 +1,29 @@
+import os
 import time
+import urllib2
+from copy import copy
 from cpredict import quick_find, quick_predict, PredictException
+
+def tle(tle_id):
+    url = "http://tle.nanosatisfi.com/%s"%tle_id
+    try:
+        res = urllib2.urlopen(url)
+        if res.getcode() != 200:
+            err = "Unable to retrieve TLE from %s (HTTP: %s)"%(url, res.getcode())
+            raise PredictException(err)
+        return res.read().rstrip()
+    except Exception as e:
+        raise PredictException("Unable to retrieve TLE from %s: (%s)"%(url,e))
+
+def host_qth(path="~/.predict/predict.qth"):
+    path = os.path.abspath(os.path.expanduser(path))
+    try:
+        with open(path) as qthfile:
+            raw = [l.strip() for l in qthfile.readlines()]
+            assert len(raw)== 4, "must match:\nname\nlat(N)\nlong(W)\nalt"%path
+            return massage_qth(raw[1:])
+    except Exception as e:
+        raise PredictException("Unable to process qth '%s' (%s)"%(path, e))
 
 def massage_tle(tle):
     try:
@@ -17,7 +41,7 @@ def massage_qth(qth):
         assert len(qth) == 3, "%s must consist of exactly three elements: (lat(N), long(W), alt(m))" % qth
         return (float(qth[0]), float(qth[1]), int(qth[2]))
     except ValueError as e:
-        raise PredictException("Unable to convert '%s' (%s)" % (qth, str(e)))
+        raise PredictException("Unable to convert '%s' (%s)" % (qth, e))
     except Exception as e:
         raise PredictException(e)
 
@@ -82,6 +106,47 @@ class Transit():
                 # Step towards the peak
                 ts = next_ts
         return self.at(ts)
+
+    # Return portion of transit above a certain elevation
+    def above(self, elevation):
+        return self.prune(lambda ts: self.at(ts)['elevation'] >= elevation)
+
+    # Return section of a transit where a pruning function is valid.
+    # Currently used to set elevation threshold, could also be used for site-specific horizon masks.
+    # fx must either return false everywhere or true for a contiguous period including the peak
+    def prune(self, fx, epsilon=0.1):
+        peak = self.peak()['epoch']
+        if not fx(peak):
+            start = peak
+            end = peak
+        else:
+            if fx(self.start):
+                start = self.start
+            else:
+                left, right = self.start, peak
+                while ((right - left) > epsilon):
+                    mid = (left + right)/2
+                    if fx(mid):
+                        right = mid
+                    else:
+                        left = mid
+                start = right
+            if fx(self.end):
+                end = self.end
+            else:
+                left, right = peak, self.end
+                while ((right - left) > epsilon):
+                    mid = (left + right)/2
+                    if fx(mid):
+                        left = mid
+                    else:
+                        right = mid
+                end = left
+        # Use copy to allow subclassing of Transit object
+        pruned = copy(self)
+        pruned.start = start
+        pruned.end = end
+        return pruned
 
     def duration(self):
         return self.end - self.start
