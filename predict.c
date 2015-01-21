@@ -3478,7 +3478,7 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	//TODO: Seems like this should be based on the freshness of the TLE, not wall clock.
 	if ((daynum<now-365.0) || (daynum>now+365.0))
 	{
-		sprintf(errbuff, "calculation date invalid: |calc - now| < 365 (%f)\n", daynum-now);
+		sprintf(errbuff, "time %s too far from present\n", Daynum2String(daynum));
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
