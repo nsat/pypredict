@@ -3413,7 +3413,6 @@ char load(PyObject *args)
 	// If we haven't already set groundstation location, use predict's default.
 	if (PyObject_Length(args) < 3)
 	{
-		fprintf(stderr, "*** DEPRECATED: implicit QTH from host. Specify QTH explicitly. ***\n");
 		FILE *fd;
 		env=getenv("HOME");
 		sprintf(qthfile,"%s/.predict/predict.qth",env);
