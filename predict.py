@@ -123,6 +123,7 @@ class Transit():
             if fx(self.start):
                 start = self.start
             else:
+                # Invariant is that fx(right) is True
                 left, right = self.start, peak
                 while ((right - left) > epsilon):
                     mid = (left + right)/2
@@ -134,6 +135,7 @@ class Transit():
             if fx(self.end):
                 end = self.end
             else:
+                # Invariant is that fx(left) is True
                 left, right = peak, self.end
                 while ((right - left) > epsilon):
                     mid = (left + right)/2
