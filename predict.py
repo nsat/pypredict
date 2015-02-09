@@ -155,8 +155,7 @@ class Transit():
     def duration(self):
         return self.end - self.start
 
-    def at(self, t):
-        if t < self.start or t > self.end:
+    def at(self, t, epsilon = 0.1):
+        if t < (self.start-epsilon) or t > (self.end+epsilon):
             raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
         return observe(self.tle, self.qth, t)
-        
