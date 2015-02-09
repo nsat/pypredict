@@ -71,6 +71,8 @@ def transits(tle, qth, ending_after=None, ending_before=None):
 # Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit():
     def __init__(self, tle, qth, start, end):
+	if None in [tle, qth, start, end]:
+		raise TypeError("None is not a valid argument: Transit(*%s)"%[tle,qth,start,end])
         self.tle = massage_tle(tle)
         self.qth = massage_qth(qth)
         self.start = start
