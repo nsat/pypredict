@@ -3478,7 +3478,7 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 	//TODO: Seems like this should be based on the freshness of the TLE, not wall clock.
 	if ((daynum<now-365.0) || (daynum>now+365.0))
 	{
-		sprintf(errbuff, "time %s too far from present\n", Daynum2String(daynum));
+		sprintf(errbuff, "time %s too far from present", Daynum2String(daynum));
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
@@ -3493,21 +3493,21 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 
 	if (!AosHappens(0))
 	{
-		sprintf(errbuff, "%lu does not rise above horizon. No AOS.\n", sat.catnum);
+		sprintf(errbuff, "%lu does not rise above horizon. No AOS.", sat.catnum);
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
 	if (Geostationary(0)!=0)
 	{
-		sprintf(errbuff, "%lu is geostationary.  Does not transit.\n", sat.catnum);
+		sprintf(errbuff, "%lu is geostationary.  Does not transit.", sat.catnum);
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
 	if (Decayed(indx,daynum)!=0)
 	{
-		sprintf(errbuff, "%lu has decayed. Cannot calculate transit.\n", sat.catnum);
+		sprintf(errbuff, "%lu has decayed. Cannot calculate transit.", sat.catnum);
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
