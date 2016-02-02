@@ -4,17 +4,6 @@ import urllib2
 from copy import copy
 from cpredict import quick_find, quick_predict, PredictException
 
-def tle(tle_id):
-    url = "http://tle.nanosatisfi.com/%s"%tle_id
-    try:
-        res = urllib2.urlopen(url)
-        if res.getcode() != 200:
-            err = "Unable to retrieve TLE from %s (HTTP: %s)"%(url, res.getcode())
-            raise PredictException(err)
-        return res.read().rstrip()
-    except Exception as e:
-        raise PredictException("Unable to retrieve TLE from %s: (%s)"%(url,e))
-
 def host_qth(path="~/.predict/predict.qth"):
     path = os.path.abspath(os.path.expanduser(path))
     try:
@@ -71,8 +60,6 @@ def transits(tle, qth, ending_after=None, ending_before=None):
 # Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit():
     def __init__(self, tle, qth, start, end):
-	if None in [tle, qth, start, end]:
-		raise TypeError("None is not a valid argument: Transit(*%s)"%[tle,qth,start,end])
         self.tle = massage_tle(tle)
         self.qth = massage_qth(qth)
         self.start = start
@@ -155,7 +142,7 @@ class Transit():
     def duration(self):
         return self.end - self.start
 
-    def at(self, t, epsilon = 0.1):
-        if t < (self.start-epsilon) or t > (self.end+epsilon):
+    def at(self, t):
+        if t < self.start or t > self.end:
             raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
         return observe(self.tle, self.qth, t)
