@@ -3057,7 +3057,7 @@ void Calc()
 
 	Cross(&pos,&vel,&orbit_n_vector);
 
-	beta_angle = (pio2-Angle(&orbit_n_vector,&solar_vector))/deg2rad;
+	beta_angle = (Angle(&orbit_n_vector,&solar_vector)-pio2)/deg2rad;
 
 	Calculate_Obs(jul_utc, &solar_vector, &zero_vector, &obs_geodetic, &solar_set);
 
