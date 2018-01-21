@@ -72,7 +72,7 @@ predict.quick_find(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ```
 
-##API
+## API
 <pre>
 <b>observe</b>(<i>tle, qth[, at=None]</i>)  
     Return an observation of a satellite relative to a groundstation.
