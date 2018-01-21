@@ -6,7 +6,7 @@ from cpredict import quick_find, quick_predict, PredictException
 
 # fetched from http://tle.spire.com/40044
 TLE = "0 LEMUR 1\n1 40044U 14033AL  15013.74135905  .00002013  00000-0  31503-3 0  6119\n2 40044 097.9584 269.2923 0059425 258.2447 101.2095 14.72707190 30443"
-QTH = "fuze-sfgs\n37.7727\n122.4070\n25"
+QTH = (37.7727, 122.4070, 25)
 STEP = 15
 T1_IN_TRANSIT     = 1421214440.07
 T2_NOT_IN_TRANSIT = 1421202456.13
