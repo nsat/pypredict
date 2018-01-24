@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import unittest, time
+import unittest, time, sys
 import predict
 from cpredict import quick_find, quick_predict, PredictException
 
@@ -40,4 +40,6 @@ if __name__ == '__main__':
 
   for test in tests:
     suite = unittest.TestLoader().loadTestsFromTestCase(test)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if not result.wasSuccessful():
+        sys.exit(-1)
