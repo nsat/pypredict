@@ -20,6 +20,8 @@ sudo apt-get install python-dev
 sudo python setup.py install
 ```
 
+PyPredict currently only supports Python 2.
+
 ## Usage
 
 #### Observe a satellite (relative to a position on earth)

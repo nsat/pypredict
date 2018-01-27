@@ -9,6 +9,8 @@ setup(
     url="https://github.com/nsat/pypredict",
     classifiers=[
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+        'Programming Language :: Python :: 2 :: Only',
+        'Programming Language :: Python :: 2.7',
     ],
     py_modules=['predict'],
     ext_modules=[Extension('cpredict', ['predict.c'])]
