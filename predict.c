@@ -151,6 +151,20 @@ typedef struct observation {
 	char has_aos;
 	char decayed;
 	double doppler;
+	double eci_x;
+	double eci_y;
+	double eci_z;
+	double eci_vx;
+	double eci_vy;
+	double eci_vz;
+	double eci_sun_x;
+	double eci_sun_y;
+	double eci_sun_z;
+	double eci_obs_x;
+	double eci_obs_y;
+	double eci_obs_z;
+	double beta_angle;
+
 } observation;
 
 struct	{
@@ -205,6 +219,8 @@ double	tsince, jul_epoch, jul_utc, eclipse_depth=0,
 	sat_lat, sat_lon, sat_alt, sat_vel, phase,
 	sun_azi, sun_ele, daynum, fm, fk, age, aostime,
 	lostime, ax, ay, az, rx, ry, rz, squint, alat, alon,
+	eci_x, eci_y, eci_z, eci_vx, eci_vy, eci_vz, beta_angle,
+	eci_sun_x, eci_sun_y, eci_sun_z, eci_obs_x, eci_obs_y, eci_obs_z,
 	sun_ra, sun_dec, sun_lat, sun_lon, sun_range, sun_range_rate,
 	moon_az, moon_el, moon_dx, moon_ra, moon_dec, moon_gha, moon_dv;
 
@@ -2939,9 +2955,13 @@ void Calc()
 	/* Zero vector for initializations */
 	vector_t zero_vector={0,0,0,0};
 
-	/* Satellite position and velocity vectors */
+	/* Satellite position and velocity vectors in ECI */
 	vector_t vel=zero_vector;
 	vector_t pos=zero_vector;
+
+	/* Observer position and velocity vectors in ECI */
+	vector_t obs_pos=zero_vector;
+	vector_t obs_vel=zero_vector;
 
 	/* Satellite Az, El, Range, Range rate */
 	vector_t obs_set;
@@ -2951,6 +2971,9 @@ void Calc()
 
 	/* Solar observed azi and ele vector  */
 	vector_t solar_set;
+
+	/* Orbit normal vector used for calculating beta angle */
+	vector_t orbit_n_vector=zero_vector;
 
 	/* Satellite's predicted geodetic position */
 	geodetic_t sat_geodetic;
@@ -2994,11 +3017,23 @@ void Calc()
 
 	Magnitude(&vel);
 	sat_vel=vel.w;
+	eci_x = pos.x;
+	eci_y = pos.y;
+	eci_z = pos.z;
+	eci_vx = vel.x;
+	eci_vy = vel.y;
+	eci_vz = vel.z;
 
 	/** All angles in rads. Distance in km. Velocity in km/s **/
 	/* Calculate satellite Azi, Ele, Range and Range-rate */
 
 	Calculate_Obs(jul_utc, &pos, &vel, &obs_geodetic, &obs_set);
+
+	Calculate_User_PosVel(jul_utc, &obs_geodetic, &obs_pos, &obs_vel);
+
+	eci_obs_x = obs_pos.x;
+	eci_obs_y = obs_pos.y;
+	eci_obs_z = obs_pos.z;
 
 	/* Calculate satellite Lat North, Lon East and Alt. */
 
@@ -3015,6 +3050,15 @@ void Calc()
 	/* Also set or clear the satellite eclipsed flag accordingly. */
 
 	Calculate_Solar_Position(jul_utc, &solar_vector);
+
+	eci_sun_x = solar_vector.x;
+	eci_sun_y = solar_vector.y;
+	eci_sun_z = solar_vector.z;
+
+	Cross(&pos,&vel,&orbit_n_vector);
+
+	beta_angle = (Angle(&orbit_n_vector,&solar_vector)-pio2)/deg2rad;
+
 	Calculate_Obs(jul_utc, &solar_vector, &zero_vector, &obs_geodetic, &solar_set);
 
 	if (Sat_Eclipsed(&pos, &solar_vector, &eclipse_depth))
@@ -3318,6 +3362,19 @@ int MakeObservation(double obs_time, struct observation * obs) {
     obs->has_aos = aoshappens;
     obs->decayed = decayed;
     obs->doppler = doppler100;
+    obs->eci_x = eci_x;
+    obs->eci_y = eci_y;
+    obs->eci_z = eci_z;
+    obs->eci_vx = eci_vx;
+    obs->eci_vy = eci_vy;
+    obs->eci_vz = eci_vz;
+    obs->eci_sun_x = eci_sun_x;
+    obs->eci_sun_y = eci_sun_y;
+    obs->eci_sun_z = eci_sun_z;
+    obs->eci_obs_x = eci_obs_x;
+    obs->eci_obs_y = eci_obs_y;
+    obs->eci_obs_z = eci_obs_z;
+    obs->beta_angle = beta_angle;
     return 0;
 }
 
@@ -3343,11 +3400,24 @@ void PrintObservation(struct observation * obs) {
     printf("AOS_Happens     %d\n", obs->has_aos);
     printf("Decayed         %d\n", obs->decayed);
     printf("Doppler         %f\n", obs->doppler);
+    printf("ECI_x           %f\n", obs->eci_x);
+    printf("ECI_y           %f\n", obs->eci_y);
+    printf("ECI_z           %f\n", obs->eci_z);
+    printf("ECI_vx          %f\n", obs->eci_vx);
+    printf("ECI_vy          %f\n", obs->eci_vy);
+    printf("ECI_vz          %f\n", obs->eci_vz);
+    printf("ECI_sun_x       %f\n", obs->eci_sun_x);
+    printf("ECI_sun_y       %f\n", obs->eci_sun_y);
+    printf("ECI_sun_z       %f\n", obs->eci_sun_z);
+    printf("ECI_obs_x       %f\n", obs->eci_obs_x);
+    printf("ECI_obs_y       %f\n", obs->eci_obs_y);
+    printf("ECI_obs_z       %f\n", obs->eci_obs_z);
+    printf("Beta_Angle(deg) %f\n", obs->beta_angle);
 }
 
 PyObject * PythonifyObservation(observation * obs) {
 	//TODO: Add reference count?
-	return Py_BuildValue("{s:l,s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:s,s:c,s:i,s:l,s:i,s:i,s:i,s:d}",
+	return Py_BuildValue("{s:l,s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:s,s:c,s:i,s:l,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d}",
 		"norad_id", obs->norad_id,
 		"name", obs->name,
 		"epoch", obs->epoch,
@@ -3368,7 +3438,20 @@ PyObject * PythonifyObservation(observation * obs) {
 		"geostationary", obs->geostationary,
 		"has_aos", obs->has_aos,
 		"decayed", obs->decayed,
-		"doppler", obs->doppler
+		"doppler", obs->doppler,
+		"eci_x", obs->eci_x,
+		"eci_y", obs->eci_y,
+		"eci_z", obs->eci_z,
+		"eci_vx", obs->eci_vx,
+		"eci_vy", obs->eci_vy,
+		"eci_vz", obs->eci_vz,
+		"eci_sun_x", obs->eci_sun_x,
+		"eci_sun_y", obs->eci_sun_y,
+		"eci_sun_z", obs->eci_sun_z,
+		"eci_obs_x", obs->eci_obs_x,
+		"eci_obs_y", obs->eci_obs_y,
+		"eci_obs_z", obs->eci_obs_z,
+		"beta_angle", obs->beta_angle
 	);
 }
 
