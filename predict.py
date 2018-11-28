@@ -1,6 +1,5 @@
 import os
 import time
-import urllib2
 from copy import copy
 from cpredict import quick_find, quick_predict, PredictException
 
