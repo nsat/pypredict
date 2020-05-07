@@ -1,6 +1,8 @@
 PyPredict
 =======
 
+><b>NOTE</b>: To preserve compatibility with `predict`, pypredict uses __north__ latitude and __west__ longitude for terrestrial coordinates.
+
 Do you want accurate and time-tested satellite tracking and pass prediction in a convenient python wrapper?
 You're in the right place.
 
@@ -8,9 +10,7 @@ PyPredict is a C Python extension directly adapted from the ubiquitous [predict]
 Originally written for the commodore 64, predict has a proven pedigree; We just aim to provide a convenient API.
 PyPredict is a port of the predict codebase and should yield identical results.
 
-NOTE: pypredict and predict uses __north__ latitude, __west__ longitude for groundstation site coordinates.
-
-If you think you've found an error, please include predict's differing output in the bug report.  
+If you think you've found an error in pypredict, please include output from predict on same inputs to the bug report.  
 If you think you've found a bug in predict, please report and we'll coordinate with upstream.
 
 ### Installation
@@ -31,36 +31,48 @@ tle = """0 LEMUR 1
 2 40044 097.9584 269.2923 0059425 258.2447 101.2095 14.72707190 30443"""
 qth = (37.771034, 122.413815, 7)  # lat (N), long (W), alt (meters)
 predict.observe(tle, qth) # optional time argument defaults to time.time()
-# => {
-  'decayed': 0,
-  'elevation': -41.35311129599831,
-  'name': '0 LEMUR 1',
-  'norad_id': 40044,
-  'altitude': 640.7111771881182,
-  'orbit': 3048,
-  'longitude': 317.1566472306673,
-  'sunlit': 0,
-  'geostationary': 0,
-  'footprint': 5492.870800739669,
-  'epoch': 1421197860.582528,
-  'doppler': -777.9630509272195,
-  'visibility': 'N',
-  'azimuth': 104.54206601988983,
-  'latitude': -10.614365448199932,
-  'orbital_model': 'SGP4',
-  'orbital_phase': 208.99510848736426,
-  'eclipse_depth': 23.38122135548474,
-  'slant_range': 9338.612365004446,
-  'has_aos': 1,
-  'orbital_velocity': 27165.627315567013
-}
+# => {'altitude': 676.8782276657903,
+#     'azimuth': 96.04762045174824,
+#     'beta_angle': -27.92735429908726,
+#     'decayed': 0,
+#     'doppler': 1259.6041017128405,
+#     'eci_obs_x': -2438.227652191655,
+#     'eci_obs_y': -4420.154476060397,
+#     'eci_obs_z': 3885.390601342013,
+#     'eci_sun_x': 148633398.020844,
+#     'eci_sun_y': -7451536.44122029,
+#     'eci_sun_z': -3229999.50056359,
+#     'eci_vx': 0.20076213530665032,
+#     'eci_vy': -1.3282146055077213,
+#     'eci_vz': 7.377067234096598,
+#     'eci_x': 6045.827328897242,
+#     'eci_y': -3540.5885778261277,
+#     'eci_z': -825.4065096776636,
+#     'eclipse_depth': -87.61858291647795,
+#     'elevation': -43.711904591801726,
+#     'epoch': 1521290038.347793,
+#     'footprint': 5633.548906707907,
+#     'geostationary': 0,
+#     'has_aos': 1,
+#     'latitude': -6.759563817939698,
+#     'longitude': 326.1137007912563,
+#     'name': '0 LEMUR 1',
+#     'norad_id': 40044,
+#     'orbit': 20532,
+#     'orbital_model': 'SGP4',
+#     'orbital_phase': 145.3256815318047,
+#     'orbital_velocity': 26994.138671706416,
+#     'slant_range': 9743.943478523843,
+#     'sunlit': 1,
+#     'visibility': 'D'
+#    }
 ```
 
 #### Show upcoming transits of satellite over groundstation
 
 ```python
 p = predict.transits(tle, qth)
-for i in range(1,10):
+for _ in xrange(10):
 	transit = p.next()
 	print("%f\t%f\t%f" % (transit.start, transit.duration(), transit.peak()['elevation']))
 ```
@@ -72,34 +84,47 @@ predict.quick_find(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ```
 
-##API
+## API
 <pre>
 <b>observe</b>(<i>tle, qth[, at=None]</i>)  
     Return an observation of a satellite relative to a groundstation.
     <i>qth</i> groundstation coordinates as (lat(N),long(W),alt(m))
     If <i>at</i> is not defined, defaults to current time (time.time())
     Returns an "observation" or dictionary containing:  
-        <i>norad_id</i> : NORAD id of satellite.  
-        <i>name</i> : name of satellite from first line of TLE.  
-        <i>epoch</i> : time of observation in seconds (unix epoch)  
-        <i>azimuth</i> : azimuth of satellite in degrees relative to groundstation.  
-        <i>elevation</i> : elevation of satellite in degrees relative to groundstation.  
-        <i>slant_range</i> : distance to satellite from groundstation in meters.  
-        <i>sunlit</i> : 1 if satellite is in sunlight, 0 otherwise.  
-        <i>decayed</i>: 1 if satellite has decayed out of orbit, 0 otherwise.  
-        <i>geostationary</i> : 1 if satellite is determined to be geostationary, 0 otherwise.  
-        <i>latitude</i> : sub-satellite latitude.  
-        <i>longitude</i> : sub-satellite longitude.  
-        <i>altitude</i> : altitude of satellite relative to sub-satellite latitude, longitude.  
-        <i>has_aos</i> : 1 if the satellite will eventually be visible from the groundstation  
-        <i>doppler</i> : doppler shift between groundstation and satellite.  
-        <i>orbit</i> : refer to predict documentation  
-        <i>footprint</i> : refer to predict documentation  
-        <i>visibility</i> : refer to predict documentation  
-        <i>orbital_model</i> : refer to predict documentation  
-        <i>orbital_phase</i> : refer to predict documentation  
-        <i>eclipse_depth</i> : refer to predict documentation  
-        <i>orbital_velocity</i> : refer to predict documentation  
+        <i>altitude</i> _ altitude of satellite in meters
+        <i>azimuth</i> - azimuth of satellite in degrees from perspective of groundstation.
+        <i>beta_angle</i>
+        <i>decayed</i> - 1 if satellite has decayed out of orbit, 0 otherwise.
+        <i>doppler</i> - doppler shift between groundstation and satellite.
+        <i>eci_obs_x</i>
+        <i>eci_obs_y</i>
+        <i>eci_obs_z</i>
+        <i>eci_sun_x</i>
+        <i>eci_sun_y</i>
+        <i>eci_sun_z</i>
+        <i>eci_vx</i>
+        <i>eci_vy</i>
+        <i>eci_vz</i>
+        <i>eci_x</i>
+        <i>eci_y</i>
+        <i>eci_z</i>
+        <i>eclipse_depth</i>
+        <i>elevation</i> - elevation of satellite in degrees from perspective of groundstation.
+        <i>epoch</i> - time of observation in seconds (unix epoch)
+        <i>footprint</i>
+        <i>geostationary</i> - 1 if satellite is determined to be geostationary, 0 otherwise.
+        <i>has_aos</i> - 1 if the satellite will eventually be visible from the groundstation
+        <i>latitude</i> - north latitude of point on earth directly under satellite.
+        <i>longitude</i> - west longitude of point on earth directly under satellite.
+        <i>name</i> - name of satellite from first line of TLE.
+        <i>norad_id</i> - NORAD id of satellite.
+        <i>orbit</i>
+        <i>orbital_phase</i>
+        <i>orbital_model</i>
+        <i>orbital_velocity</i>
+        <i>slant_range</i> - distance to satellite from groundstation in meters.
+        <i>sunlit</i> - 1 if satellite is in sunlight, 0 otherwise.
+        <i>visibility</i>
 <b>transits</b>(<i>tle, qth[, ending_after=None][, ending_before=None]</i>)  
     Returns iterator of <b>Transit</b> objects representing passes of tle over qth.  
     If <i>ending_after</i> is not defined, defaults to current time  

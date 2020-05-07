@@ -1,8 +1,24 @@
 import sys
 import os
 import time
+
 from copy import copy
-from cpredict import quick_find, quick_predict, PredictException
+from cpredict import PredictException
+from cpredict import quick_find as _quick_find
+from cpredict import quick_predict as _quick_predict
+
+
+def quick_find(tle, at, qth):
+    tle = massage_tle(tle)
+    qth = massage_qth(qth)
+    return _quick_find(tle, at, qth)
+
+
+def quick_predict(tle, ts, qth):
+    tle = massage_tle(tle)
+    qth = massage_qth(qth)
+    return _quick_predict(tle, ts, qth)
+
 
 STR_TYPE = str if sys.version_info.major > 2 else basestring  # Quick python3 compatibility
 
@@ -11,10 +27,11 @@ def host_qth(path="~/.predict/predict.qth"):
     try:
         with open(path) as qthfile:
             raw = [l.strip() for l in qthfile.readlines()]
-            assert len(raw)== 4, "must match:\nname\nlat(N)\nlong(W)\nalt"%path
+            assert len(raw) == 4, "must match:\nname\nlat(N)\nlong(W)\nalt" % path
             return massage_qth(raw[1:])
     except Exception as e:
-        raise PredictException("Unable to process qth '%s' (%s)"%(path, e))
+        raise PredictException("Unable to process qth '%s' (%s)" % (path, e))
+
 
 def massage_tle(tle):
     try:
@@ -23,9 +40,10 @@ def massage_tle(tle):
             tle = tle.rstrip().split('\n')
         assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
         return tle
-        #TODO: print a warning if TLE is 'too' old
+        # TODO: print a warning if TLE is 'too' old
     except Exception as e:
         raise PredictException(e)
+
 
 def massage_qth(qth):
     try:
@@ -36,49 +54,56 @@ def massage_qth(qth):
     except Exception as e:
         raise PredictException(e)
 
+
 def observe(tle, qth, at=None):
-    tle = massage_tle(tle)
-    qth = massage_qth(qth)
     if at is None:
         at = time.time()
     return quick_find(tle, at, qth)
 
+
 def transits(tle, qth, ending_after=None, ending_before=None):
-    tle = massage_tle(tle)
-    qth = massage_qth(qth)
     if ending_after is None:
         ending_after = time.time()
     ts = ending_after
     while True:
         transit = quick_predict(tle, ts, qth)
         t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
-        if (ending_before != None and t.end > ending_before):
+        if (ending_before is not None and t.end > ending_before):
             break
         if (t.end > ending_after):
             yield t
         # Need to advance time cursor so predict doesn't yield same pass
-        ts = t.end + 60     #seconds seems to be sufficient
+        ts = t.end + 60  # seconds seems to be sufficient
+
+
+def active_transit(tle, qth, at=None):
+    if at is None:
+        at = time.time()
+    transit = quick_predict(tle, at, qth)
+    t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
+    return t if t.start <= at <= t.end else None
+
 
 # Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit():
     def __init__(self, tle, qth, start, end):
-        self.tle = massage_tle(tle)
-        self.qth = massage_qth(qth)
+        self.tle = tle
+        self.qth = qth
         self.start = start
         self.end = end
 
     # return observation within epsilon seconds of maximum elevation
     # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
     def peak(self, epsilon=0.1):
-        ts =  (self.end + self.start)/2
+        ts = (self.end + self.start) / 2
         step = (self.end - self.start)
         while (step > epsilon):
             step /= 4
             # Ascend the gradient at this step size
             direction = None
             while True:
-                mid   = observe(self.tle, self.qth, ts)['elevation']
-                left  = observe(self.tle, self.qth, ts - step)['elevation']
+                mid = observe(self.tle, self.qth, ts)['elevation']
+                left = observe(self.tle, self.qth, ts - step)['elevation']
                 right = observe(self.tle, self.qth, ts + step)['elevation']
                 # Break if we're at a peak
                 if (left <= mid >= right):
