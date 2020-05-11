@@ -3678,11 +3678,29 @@ static PyMethodDef pypredict_funcs[] = {
     {NULL, NULL, 0, NULL}
 };
 
-void initcpredict(void)
+#if PY_MAJOR_VERSION >= 3
+	static struct PyModuleDef moduledef = {
+		PyModuleDef_HEAD_INIT,
+		"cpredict",     /* m_name */
+		"Python port of the predict open source satellite tracking library",  /* m_doc */
+		-1,                  /* m_size */
+		pypredict_funcs,    /* m_methods */
+		NULL,                /* m_reload */
+		NULL,                /* m_traverse */
+		NULL,                /* m_clear */
+		NULL,                /* m_free */
+	};
+#endif
+
+static PyObject * cpredictinit(void)
 {
 	PyObject *m;
+#if PY_MAJOR_VERSION >= 3
+	m = PyModule_Create(&moduledef);
+#else
 	m = Py_InitModule3("cpredict", pypredict_funcs,
 					"Python port of the predict open source satellite tracking library");
+#endif
 	if (m == NULL) {
 		fprintf(stderr, "ERROR: Unable to initialize python module 'cpredict'\n");
 	}
@@ -3696,4 +3714,18 @@ void initcpredict(void)
 	NoTransitException = PyErr_NewException("cpredict.NoTransitException", PredictException, NULL);
 	Py_INCREF(NoTransitException);
 	PyModule_AddObject(m, "NoTransitException", NoTransitException);
+
+	return m;
 }
+
+#if PY_MAJOR_VERSION >= 3
+PyMODINIT_FUNC PyInit_cpredict(void)
+{
+	return cpredictinit();
+}
+#else
+PyMODINIT_FUNC initcpredict(void)
+{
+	cpredictinit();
+}
+#endif

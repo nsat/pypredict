@@ -1,3 +1,4 @@
+import sys
 import os
 import time
 
@@ -19,6 +20,8 @@ def quick_predict(tle, ts, qth):
     return _quick_predict(tle, ts, qth)
 
 
+STR_TYPE = str if sys.version_info.major > 2 else basestring  # Quick python3 compatibility
+
 def host_qth(path="~/.predict/predict.qth"):
     path = os.path.abspath(os.path.expanduser(path))
     try:
@@ -33,7 +36,7 @@ def host_qth(path="~/.predict/predict.qth"):
 def massage_tle(tle):
     try:
         # TLE may or may not have been split into lines already
-        if isinstance(tle, basestring):
+        if isinstance(tle, STR_TYPE):
             tle = tle.rstrip().split('\n')
         assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
         return tle
