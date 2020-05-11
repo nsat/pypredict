@@ -23,14 +23,15 @@ function get-variants() {
     fi
 }
 
-cd /io
+cd /io || exit
+mkdir -p wheelhouse || exit
 
 for version in ${PYTHON_VERSIONS} ; do
     for variant in $(get-variants "${version}") ; do
-        /opt/python/cp${version}-cp${version}${variant}/bin/python setup.py bdist_wheel
+        "/opt/python/cp${version}-cp${version}${variant}/bin/pip" wheel /io -w wheelhouse/
     done
 done
 
-for f in dist/*.whl ; do
-    /opt/python/cp37-cp37m/bin/auditwheel repair "${f}"
+for f in wheelhouse/*.whl ; do
+    /usr/local/bin/auditwheel repair "${f}"
 done

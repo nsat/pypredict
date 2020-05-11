@@ -10,5 +10,5 @@ clean:
 
 .PHONY: manylinux-wheels
 manylinux-wheels:
-	docker run -v $(shell pwd):/io quay.io/pypa/manylinux1_x86_64:latest \
+	docker run --user $(shell id -u):$(shell id -g) -v $(shell pwd):/io quay.io/pypa/manylinux1_x86_64:latest \
 		/io/bin/build-manylinux-wheel.sh 27 35 36 37 38
