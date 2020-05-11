@@ -2,10 +2,17 @@ import sys
 import os
 import time
 
+from collections import namedtuple
 from copy import copy
 from cpredict import PredictException
 from cpredict import quick_find as _quick_find
 from cpredict import quick_predict as _quick_predict
+
+
+SolarWindow = namedtuple("SolarWindow", ['start', 'end'])
+ECLIPSE_DEPTH_SMALL_STEPS = 0  # degrees near 0 eclipse depth to switch from large steps to small steps
+LARGE_PREDICT_TIMESTEP_SECONDS = 20
+SMALL_PREDICT_TIMESTEP_SECONDS = 1
 
 
 def quick_find(tle, at, qth):
@@ -21,6 +28,7 @@ def quick_predict(tle, ts, qth):
 
 
 STR_TYPE = str if sys.version_info.major > 2 else basestring  # Quick python3 compatibility
+
 
 def host_qth(path="~/.predict/predict.qth"):
     path = os.path.abspath(os.path.expanduser(path))
@@ -173,3 +181,41 @@ class Transit():
         if t < self.start or t > self.end:
             raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
         return observe(self.tle, self.qth, t)
+
+
+def find_solar_periods(start, end, tle, eclipse=False):
+    """
+    Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range
+    """
+    qth = (0, 0, 0)  # doesn't matter since we dont care about relative position from ground
+
+    last_start = None
+    ret = []
+    prev_period = -1
+    t = start
+    while t < end:
+        obs = observe(tle, qth, t)
+        if not eclipse:
+            # Check for transitioning into sun, then transitioning out
+            if prev_period == 0 and obs['sunlit'] == 1:
+                last_start = t
+            elif prev_period == 1 and obs['sunlit'] == 0:
+                if last_start is not None:
+                    ret.append(SolarWindow(last_start, t))
+                    last_start = None
+        else:
+            # Check for transitioning out of sun into eclipse
+            if prev_period == 1 and obs['sunlit'] == 0:
+                last_start = t
+            elif prev_period == 0 and obs['sunlit'] == 1:
+                if last_start is not None:
+                    ret.append(SolarWindow(last_start, t))
+                    last_start = None
+        prev_period = obs['sunlit']
+        # Use large steps if not near an eclipse boundary
+        if abs(obs['eclipse_depth']) > ECLIPSE_DEPTH_SMALL_STEPS:
+            t += LARGE_PREDICT_TIMESTEP_SECONDS
+        else:
+            t += SMALL_PREDICT_TIMESTEP_SECONDS
+
+    return ret
