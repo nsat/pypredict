@@ -28,7 +28,7 @@ mkdir -p wheelhouse || exit
 
 for version in ${PYTHON_VERSIONS} ; do
     for variant in $(get-variants "${version}") ; do
-        "/opt/python/cp${version}-cp${version}${variant}/bin/pip" wheel /io -w wheelhouse/
+        "/opt/python/cp${version}-cp${version}${variant}/bin/pip" --no-cache-dir wheel /io -w wheelhouse/
     done
 done
 
