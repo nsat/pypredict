@@ -10,9 +10,6 @@ from cpredict import quick_predict as _quick_predict
 
 
 SolarWindow = namedtuple("SolarWindow", ['start', 'end'])
-ECLIPSE_DEPTH_SMALL_STEPS = 0  # degrees near 0 eclipse depth to switch from large steps to small steps
-LARGE_PREDICT_TIMESTEP_SECONDS = 20
-SMALL_PREDICT_TIMESTEP_SECONDS = 1
 
 
 def quick_find(tle, at, qth):
@@ -183,7 +180,8 @@ class Transit():
         return observe(self.tle, self.qth, t)
 
 
-def find_solar_periods(start, end, tle, eclipse=False):
+def find_solar_periods(start, end, tle, eclipse=False, eclipse_depth_threshold=0
+                       large_predict_timestep=20, small_predict_timestep=1):
     """
     Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range
     """
@@ -213,9 +211,9 @@ def find_solar_periods(start, end, tle, eclipse=False):
                     last_start = None
         prev_period = obs['sunlit']
         # Use large steps if not near an eclipse boundary
-        if abs(obs['eclipse_depth']) > ECLIPSE_DEPTH_SMALL_STEPS:
-            t += LARGE_PREDICT_TIMESTEP_SECONDS
+        if abs(obs['eclipse_depth']) > eclipse_depth_threshold:
+            t += large_predict_timestep
         else:
-            t += SMALL_PREDICT_TIMESTEP_SECONDS
+            t += small_predict_timestep
 
     return ret
