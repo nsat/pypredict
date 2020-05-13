@@ -24,7 +24,7 @@ def quick_predict(tle, ts, qth):
     return _quick_predict(tle, ts, qth)
 
 
-STR_TYPE = str if sys.version_info.major > 2 else basestring  # Quick python3 compatibility
+STR_TYPE = str if sys.version_info.major > 2 else basestring  # noqa: F821
 
 
 def host_qth(path="~/.predict/predict.qth"):
@@ -180,7 +180,7 @@ class Transit():
         return observe(self.tle, self.qth, t)
 
 
-def find_solar_periods(start, end, tle, eclipse=False, eclipse_depth_threshold=0
+def find_solar_periods(start, end, tle, eclipse=False, eclipse_depth_threshold=0,
                        large_predict_timestep=20, small_predict_timestep=1):
     """
     Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range
