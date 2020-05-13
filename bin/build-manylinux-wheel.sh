@@ -24,14 +24,14 @@ function get-variants() {
 }
 
 cd /io || exit
-mkdir -p wheelhouse || exit
+mkdir -p dist || exit
 
 for version in ${PYTHON_VERSIONS} ; do
     for variant in $(get-variants "${version}") ; do
-        "/opt/python/cp${version}-cp${version}${variant}/bin/pip" --no-cache-dir wheel /io -w wheelhouse/
+        "/opt/python/cp${version}-cp${version}${variant}/bin/pip" --no-cache-dir wheel /io -w dist/
     done
 done
 
-for f in wheelhouse/*.whl ; do
+for f in dist/*.whl ; do
     /usr/local/bin/auditwheel repair "${f}"
 done
