@@ -4,7 +4,7 @@ from setuptools import setup, Extension
 
 setup(
     name="pypredict",
-    version="1.6.3",
+    version="1.6.2",
     author="Jesse Trutna",
     author_email="jesse@spire.com",
     url="https://github.com/nsat/pypredict",
