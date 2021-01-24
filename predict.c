@@ -3478,7 +3478,7 @@ PyObject * PythonifyObservation(observation * obs) {
 char load(PyObject *args)
 {
 	//TODO: Not threadsafe, detect and raise warning?
-	int x;
+	int x, tle_error;
 	char *env=NULL;
 
 	/* Set up translation table for computing TLE checksums */
@@ -3497,9 +3497,22 @@ char load(PyObject *args)
 		return -1;
 	};
 
-	if (ReadTLE(tle0,tle1,tle2) != 0)
-	{
-		PyErr_SetString(PredictException, "Unable to process TLE");
+	tle_error = ReadTLE(tle0,tle1,tle2);
+
+	if (tle_error & 8) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Name line missing or too long.");
+		return -1;
+	} else if (tle_error & 4) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Line 1 missing or too long.");
+		return -1;
+	} else if (tle_error & 2) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Line 2 missing or too long.");
+		return -1;
+	} else if (tle_error & 1) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Checksum error.");
+		return -1;
+	} else if (tle_error != 0) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Unknown error.");
 		return -1;
 	}
 
