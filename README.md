@@ -91,7 +91,7 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
     <i>qth</i> groundstation coordinates as (lat(N),long(W),alt(m))
     If <i>at</i> is not defined, defaults to current time (time.time())
     Returns an "observation" or dictionary containing:  
-        <i>altitude</i> _ altitude of satellite in meters
+        <i>altitude</i> _ altitude of satellite in kilometers
         <i>azimuth</i> - azimuth of satellite in degrees from perspective of groundstation.
         <i>beta_angle</i>
         <i>decayed</i> - 1 if satellite has decayed out of orbit, 0 otherwise.
