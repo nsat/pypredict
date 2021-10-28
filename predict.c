@@ -175,8 +175,8 @@ struct	{
  	   long catnum;          // Catalog Number (a.k.a NORAD id)
 	   long setnum;          // Element Set No.
 	   char designator[10];  // Designator
- 	   int year;             // Reference Epoch (year?) (?)
-	   double refepoch;      // Reference Epoch (?)
+ 	   int year;             // Reference Epoch from TLE (2-digit year) 
+	   double refepoch;      // Reference Epoch from TLE (day of the year and fractional portion of the day)
 	   double incl;          // Inclination
 	   double raan;          // RAAN
 	   double eccn;          // Eccentricity
@@ -2615,7 +2615,7 @@ double CurrentDaynum()
 	if (debug_freeze_time)
 	{
 		time_t debug_frozen_time = mktime(&debug_frozen_tm);
-		return ((((double)debug_frozen_time)/86400.0) - 3651.0);
+		return ((((double)debug_frozen_time)/86400.0) - 3651.0);  // 3651 is the number of days in 10 years
 	}
 
 	int x;
@@ -3169,6 +3169,7 @@ char Decayed(int x, double time)
 		time=CurrentDaynum();
 	}
 
+	// Heads Up: This is a long being placed into a double w/o explicit conversion
 	satepoch=DayNum(1,0,sat.year)+sat.refepoch;
 
 	if (satepoch+((16.666666-sat.meanmo)/(10.0*fabs(sat.drag))) < time)
@@ -3543,7 +3544,7 @@ static char quick_find_docs[] =
 
 static PyObject* quick_predict(PyObject* self, PyObject *args)
 {
-	double now;
+	double tle_epoch;
 	int lastel=0;
 	char errbuff[100];
 	observation obs = { 0 };
@@ -3554,7 +3555,7 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	now=CurrentDaynum();
+	tle_epoch=DayNum(1,0,sat.year)+sat.refepoch;
 
 	if (load(args) != 0)
 	{
@@ -3562,10 +3563,9 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	//TODO: Seems like this should be based on the freshness of the TLE, not wall clock.
-	if ((daynum<now-365.0) || (daynum>now+365.0))
+	if ((daynum<tle_epoch-365.0) || (daynum>tle_epoch+365.0))
 	{
-		sprintf(errbuff, "time %s too far from present\n", Daynum2String(daynum));
+		sprintf(errbuff, "day number %.0f too far from tle epoch day %.0f\n", daynum, tle_epoch);
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
