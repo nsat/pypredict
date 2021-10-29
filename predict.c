@@ -2630,8 +2630,7 @@ double CurrentDaynum()
 	return ((seconds/86400.0)-3651.0);
 }
 
-char *Daynum2String(daynum)
-double daynum;
+char *Daynum2String(double daynum)
 {
 	/* This function takes the given epoch as a fractional number of
 	   days since 31Dec79 00:00:00 UTC and returns the corresponding
@@ -3555,14 +3554,13 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	tle_epoch=DayNum(1,0,sat.year)+sat.refepoch;
-
 	if (load(args) != 0)
 	{
 		// load will set the appropriate exception string if it fails.
 		goto cleanup_and_raise_exception;
 	}
 
+	tle_epoch=(double)DayNum(1,0,sat.year)+sat.refepoch;
 	if ((daynum<tle_epoch-365.0) || (daynum>tle_epoch+365.0))
 	{
 		sprintf(errbuff, "day number %.0f too far from tle epoch day %.0f\n", daynum, tle_epoch);
