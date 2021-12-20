@@ -77,6 +77,46 @@ for _ in xrange(10):
 	print("%f\t%f\t%f" % (transit.start, transit.duration(), transit.peak()['elevation']))
 ```
 
+#### Modeling an entire constellation
+
+Generating transits for a lot of satellites over a lot of groundstations can be slow.
+Luckily, generating transits for each satellite-groundstation pair can be parallelized for a big speedup.
+
+```
+import itertools
+from multiprocessing.pool import Pool
+import time
+
+import predict
+import requests
+
+# Define a function that returns arguments for all the transits() calls you want to make
+def _transits_call_arguments():
+    now = time.time()
+    tle = requests.get('http://tle.spire.com/25544').text.rstrip()
+    for latitude in range(-90, 91, 15):
+        for longitude in range(-180, 181, 15):
+            qth = (latitude, longitude, 0)
+            yield {'tle': tle, 'qth': qth, 'ending_before': now+60*60*24*7}
+
+# Define a function that calls the transit function on a set of arguments and does per-transit processing
+def _transits_call_fx(kwargs):
+    try:
+        transits = list(predict.transits(**kwargs))
+        return [t.above(10) for t in transits]
+    except predict.PredictException:
+        pass
+
+# Map the transit() caller across all the arguments you want, then flatten results into a single list
+pool = Pool(processes=10)
+array_of_results = pool.map(_transits_call_fx, _transits_call_arguments())
+flattened_results = list(itertools.chain.from_iterable(filter(None, array_of_results)))
+transits = flattened_results
+```
+
+NOTE: If precise accuracy isn't necessary (for modeling purposes, for example) setting the tolerance argument
+      to the `above` call to a larger value, say 1 degree, can provide a signifigant performance boost.
+
 #### Call predict analogs directly
 
 ```python
@@ -142,6 +182,11 @@ predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
         Returns epoch time where transit reaches maximum elevation (within ~<i>epsilon</i>)
     <b>at</b>(<i>timestamp</i>)  
         Returns observation during transit via <b>quick_find</b>(<i>tle, timestamp, qth</i>)
+    <b>above</b>b(<i>elevation</i>, <i>tolerance</i>)
+        Returns portion of transit above elevation. If the entire transit is below the target elevation, both
+        endpoints will be set to the peak and the duration will be zero. If a portion of the transit is above
+        the elevation target, the endpoints will be between elevation and elevation + tolerance (unless
+        endpoint is already above elevation, in which case it will be unchanged)
 <b>quick_find</b>(<i>tle[, time[, (lat, long, alt)]]</i>)  
     <i>time</i> defaults to current time   
     <i>(lat, long, alt)</i> defaults to values in ~/.predict/predict.qth  
