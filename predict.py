@@ -91,8 +91,9 @@ def active_transit(tle, qth, at=None):
     return t if t.start <= at <= t.end else None
 
 
-# Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit():
+    """A convenience class representing a pass of a satellite over a groundstation."""
+
     def __init__(self, tle, qth, start, end, _samples=None):
         self.tle = tle
         self.qth = qth
@@ -103,9 +104,11 @@ class Transit():
         else:
             self._samples = [s for s in _samples if start <= s['epoch'] <= end]
 
-    # return observation within epsilon seconds of maximum elevation
-    # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
     def peak(self, epsilon=0.1):
+        """Return observation within epsilon seconds of maximum elevation.
+
+        NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval.
+        """
         ts = (self.end + self.start) / 2
         step = self.end - self.start
         while step > epsilon:
@@ -135,18 +138,20 @@ class Transit():
         return self.at(ts)
 
     def above(self, elevation, tolerance=0.001):
-        ''' Return portion of transit that lies above argument elevation '''
-        ''' Elevation at new endpoints will lie between elevation and elevation + tolerance
-            unless endpoint of original transit is already above elevation, in which case
-            it won't change, or entire transit is below elevation target, in which case
-            resulting transit will have zero length.
-        '''
+        """Return portion of transit that lies above argument elevation.
+
+        Elevation at new endpoints will lie between elevation and elevation + tolerance unless
+        endpoint of original transit is already above elevation, in which case it won't change, or
+        entire transit is below elevation target, in which case resulting transit will have zero
+        length.
+        """
 
         def capped_below(elevation, samples):
-            ''' Quick heuristic to filter transits that CAN'T reach target elevation '''
-            ''' Assumes transit is unimodal and derivative is monotonic. i.e. transit
-                is a smooth section of something that has ellipse-like geometry.
-            '''
+            """Quick heuristic to filter transits that can't reach target elevation.
+
+            Assumes transit is unimodal and derivative is monotonic. i.e. transit is a smooth
+            section of something that has ellipse-like geometry.
+            """
             limit = None
 
             if len(samples) < 3:
@@ -179,9 +184,7 @@ class Transit():
                 samples.sort(key=lambda s: s['epoch'])
 
         def interpolate(samples, elevation, tolerance):
-            ''' Find two adjacent samples that straddle the elevation target and interpolate
-                between them (unless one of them is already close enough)
-            '''
+            """Interpolate between adjacent samples straddling the elevation target."""
 
             for i in xrange(len(samples) - 1):
                 a, b = samples[i:i+2]
@@ -229,11 +232,14 @@ class Transit():
             end = samples[-1]['epoch']
         return Transit(self.tle, self.qth, start, end, samples)
 
-    # Return section of a transit where a pruning function is valid.
-    # Currently used to set elevation threshold, unclear what other uses it might have.
-    # fx must either return false everywhere or true for a contiguous period including the peak
     def prune(self, fx, epsilon=0.1):
-        peak = self.peak()["epoch"]
+        """Return section of a transit where a pruning function is valid.
+
+        Currently used to set elevation threshold, unclear what other uses it might have. fx must
+        either return false everywhere or true for a contiguous period including the peak.
+        """
+
+        peak = self.peak()['epoch']
         if not fx(peak):
             start = peak
             end = peak
@@ -289,7 +295,7 @@ def find_solar_periods(
     small_predict_timestep=1,
 ):
     """
-    Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range
+    Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range.
     """
     qth = (
         0,
