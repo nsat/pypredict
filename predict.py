@@ -9,7 +9,7 @@ from cpredict import quick_find as _quick_find
 from cpredict import quick_predict as _quick_predict
 
 
-SolarWindow = namedtuple("SolarWindow", ['start', 'end'])
+SolarWindow = namedtuple("SolarWindow", ["start", "end"])
 
 
 def quick_find(tle, at, qth):
@@ -31,7 +31,7 @@ def host_qth(path="~/.predict/predict.qth"):
     path = os.path.abspath(os.path.expanduser(path))
     try:
         with open(path) as qthfile:
-            raw = [l.strip() for l in qthfile.readlines()]
+            raw = [line.strip() for line in qthfile.readlines()]
             assert len(raw) == 4, "must match:\nname\nlat(N)\nlong(W)\nalt" % path
             return massage_qth(raw[1:])
     except Exception as e:
@@ -42,7 +42,7 @@ def massage_tle(tle):
     try:
         # TLE may or may not have been split into lines already
         if isinstance(tle, STR_TYPE):
-            tle = tle.rstrip().split('\n')
+            tle = tle.rstrip().split("\n")
         assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
         return tle
         # TODO: print a warning if TLE is 'too' old
@@ -52,7 +52,9 @@ def massage_tle(tle):
 
 def massage_qth(qth):
     try:
-        assert len(qth) == 3, "%s must consist of exactly three elements: (lat(N), long(W), alt(m))" % qth
+        assert len(qth) == 3, (
+            "%s must consist of exactly three elements: (lat(N), long(W), alt(m))" % qth
+        )
         return (float(qth[0]), float(qth[1]), int(qth[2]))
     except ValueError as e:
         raise PredictException("Unable to convert '%s' (%s)" % (qth, e))
@@ -72,10 +74,10 @@ def transits(tle, qth, ending_after=None, ending_before=None):
     ts = ending_after
     while True:
         transit = quick_predict(tle, ts, qth)
-        t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
-        if (ending_before is not None and t.end > ending_before):
+        t = Transit(tle, qth, start=transit[0]["epoch"], end=transit[-1]["epoch"])
+        if ending_before is not None and t.end > ending_before:
             break
-        if (t.end > ending_after):
+        if t.end > ending_after:
             yield t
         # Need to advance time cursor so predict doesn't yield same pass
         ts = t.end + 60  # seconds seems to be sufficient
@@ -85,12 +87,12 @@ def active_transit(tle, qth, at=None):
     if at is None:
         at = time.time()
     transit = quick_predict(tle, at, qth)
-    t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'])
+    t = Transit(tle, qth, start=transit[0]["epoch"], end=transit[-1]["epoch"])
     return t if t.start <= at <= t.end else None
 
 
 # Transit is a convenience class representing a pass of a satellite over a groundstation.
-class Transit():
+class Transit:
     def __init__(self, tle, qth, start, end):
         self.tle = tle
         self.qth = qth
@@ -101,17 +103,17 @@ class Transit():
     # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
     def peak(self, epsilon=0.1):
         ts = (self.end + self.start) / 2
-        step = (self.end - self.start)
-        while (step > epsilon):
+        step = self.end - self.start
+        while step > epsilon:
             step /= 4
             # Ascend the gradient at this step size
             direction = None
             while True:
-                mid = observe(self.tle, self.qth, ts)['elevation']
-                left = observe(self.tle, self.qth, ts - step)['elevation']
-                right = observe(self.tle, self.qth, ts + step)['elevation']
+                mid = observe(self.tle, self.qth, ts)["elevation"]
+                left = observe(self.tle, self.qth, ts - step)["elevation"]
+                right = observe(self.tle, self.qth, ts + step)["elevation"]
                 # Break if we're at a peak
-                if (left <= mid >= right):
+                if left <= mid >= right:
                     break
                 # Ascend up slope
                 slope = -1 if (left > right) else 1
@@ -130,13 +132,13 @@ class Transit():
 
     # Return portion of transit above a certain elevation
     def above(self, elevation):
-        return self.prune(lambda ts: self.at(ts)['elevation'] >= elevation)
+        return self.prune(lambda ts: self.at(ts)["elevation"] >= elevation)
 
     # Return section of a transit where a pruning function is valid.
     # Currently used to set elevation threshold, unclear what other uses it might have.
     # fx must either return false everywhere or true for a contiguous period including the peak
     def prune(self, fx, epsilon=0.1):
-        peak = self.peak()['epoch']
+        peak = self.peak()["epoch"]
         if not fx(peak):
             start = peak
             end = peak
@@ -146,8 +148,8 @@ class Transit():
             else:
                 # Invariant is that fx(right) is True
                 left, right = self.start, peak
-                while ((right - left) > epsilon):
-                    mid = (left + right)/2
+                while (right - left) > epsilon:
+                    mid = (left + right) / 2
                     if fx(mid):
                         right = mid
                     else:
@@ -158,8 +160,8 @@ class Transit():
             else:
                 # Invariant is that fx(left) is True
                 left, right = peak, self.end
-                while ((right - left) > epsilon):
-                    mid = (left + right)/2
+                while (right - left) > epsilon:
+                    mid = (left + right) / 2
                     if fx(mid):
                         left = mid
                     else:
@@ -176,16 +178,29 @@ class Transit():
 
     def at(self, t, epsilon=0.001):
         if t < (self.start - epsilon) or t > (self.end + epsilon):
-            raise PredictException("time %f outside transit [%f, %f]" % (t, self.start, self.end))
+            raise PredictException(
+                "time %f outside transit [%f, %f]" % (t, self.start, self.end)
+            )
         return observe(self.tle, self.qth, t)
 
 
-def find_solar_periods(start, end, tle, eclipse=False, eclipse_depth_threshold=0,
-                       large_predict_timestep=20, small_predict_timestep=1):
+def find_solar_periods(
+    start,
+    end,
+    tle,
+    eclipse=False,
+    eclipse_depth_threshold=0,
+    large_predict_timestep=20,
+    small_predict_timestep=1,
+):
     """
     Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range
     """
-    qth = (0, 0, 0)  # doesn't matter since we dont care about relative position from ground
+    qth = (
+        0,
+        0,
+        0,
+    )  # doesn't matter since we dont care about relative position from ground
 
     last_start = None
     ret = []
@@ -195,23 +210,23 @@ def find_solar_periods(start, end, tle, eclipse=False, eclipse_depth_threshold=0
         obs = observe(tle, qth, t)
         if not eclipse:
             # Check for transitioning into sun, then transitioning out
-            if prev_period == 0 and obs['sunlit'] == 1:
+            if prev_period == 0 and obs["sunlit"] == 1:
                 last_start = t
-            elif prev_period == 1 and obs['sunlit'] == 0:
+            elif prev_period == 1 and obs["sunlit"] == 0:
                 if last_start is not None:
                     ret.append(SolarWindow(last_start, t))
                     last_start = None
         else:
             # Check for transitioning out of sun into eclipse
-            if prev_period == 1 and obs['sunlit'] == 0:
+            if prev_period == 1 and obs["sunlit"] == 0:
                 last_start = t
-            elif prev_period == 0 and obs['sunlit'] == 1:
+            elif prev_period == 0 and obs["sunlit"] == 1:
                 if last_start is not None:
                     ret.append(SolarWindow(last_start, t))
                     last_start = None
-        prev_period = obs['sunlit']
+        prev_period = obs["sunlit"]
         # Use large steps if not near an eclipse boundary
-        if abs(obs['eclipse_depth']) > eclipse_depth_threshold:
+        if abs(obs["eclipse_depth"]) > eclipse_depth_threshold:
             t += large_predict_timestep
         else:
             t += small_predict_timestep
