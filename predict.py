@@ -166,7 +166,7 @@ class Transit:
                 raise ValueError("samples array must have length > 3")
 
             # Find samples that form a hump
-            for i in xrange(len(samples) - 2):
+            for i in range(len(samples) - 2):
                 a, b, c = samples[i : i + 3]
 
                 ae, be, ce = a["elevation"], b["elevation"], c["elevation"]
@@ -194,7 +194,7 @@ class Transit:
         def interpolate(samples, elevation, tolerance):
             """Interpolate between adjacent samples straddling the elevation target."""
 
-            for i in xrange(len(samples) - 1):
+            for i in range(len(samples) - 1):
                 a, b = samples[i : i + 2]
 
                 if any(
