@@ -74,8 +74,14 @@ def transits(tle, qth, ending_after=None, ending_before=None):
     ts = ending_after
     while True:
         transit = quick_predict(tle, ts, qth)
-        t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'], _samples=transit)
-        if (ending_before is not None and t.end > ending_before):
+        t = Transit(
+            tle,
+            qth,
+            start=transit[0]["epoch"],
+            end=transit[-1]["epoch"],
+            _samples=transit,
+        )
+        if ending_before is not None and t.end > ending_before:
             break
         if t.end > ending_after:
             yield t
@@ -87,11 +93,13 @@ def active_transit(tle, qth, at=None):
     if at is None:
         at = time.time()
     transit = quick_predict(tle, at, qth)
-    t = Transit(tle, qth, start=transit[0]['epoch'], end=transit[-1]['epoch'], _samples=transit)
+    t = Transit(
+        tle, qth, start=transit[0]["epoch"], end=transit[-1]["epoch"], _samples=transit
+    )
     return t if t.start <= at <= t.end else None
 
 
-class Transit():
+class Transit:
     """A convenience class representing a pass of a satellite over a groundstation."""
 
     def __init__(self, tle, qth, start, end, _samples=None):
@@ -102,7 +110,7 @@ class Transit():
         if _samples is None:
             self._samples = []
         else:
-            self._samples = [s for s in _samples if start <= s['epoch'] <= end]
+            self._samples = [s for s in _samples if start <= s["epoch"] <= end]
 
     def peak(self, epsilon=0.1):
         """Return observation within epsilon seconds of maximum elevation.
@@ -159,10 +167,10 @@ class Transit():
 
             # Find samples that form a hump
             for i in xrange(len(samples) - 2):
-                a, b, c = samples[i:i+3]
+                a, b, c = samples[i : i + 3]
 
-                ae, be, ce = a['elevation'], b['elevation'], c['elevation']
-                at, bt, ct = a['epoch'], b['epoch'], c['epoch']
+                ae, be, ce = a["elevation"], b["elevation"], c["elevation"]
+                at, bt, ct = a["epoch"], b["epoch"], c["epoch"]
 
                 if ae < be > ce:
                     left_step = bt - at
@@ -174,27 +182,30 @@ class Transit():
 
             # If limit isn't set, we didn't find a hump, so max is at one of edges.
             if limit is None:
-                limit = max(s['elevation'] for s in samples)
+                limit = max(s["elevation"] for s in samples)
 
             return limit < elevation
 
         def add_sample(ts, samples):
-            if ts not in [s['epoch'] for s in samples]:
+            if ts not in [s["epoch"] for s in samples]:
                 samples.append(self.at(ts))
-                samples.sort(key=lambda s: s['epoch'])
+                samples.sort(key=lambda s: s["epoch"])
 
         def interpolate(samples, elevation, tolerance):
             """Interpolate between adjacent samples straddling the elevation target."""
 
             for i in xrange(len(samples) - 1):
-                a, b = samples[i:i+2]
+                a, b = samples[i : i + 2]
 
-                if any(abs(sample['elevation'] - elevation) <= tolerance for sample in [a, b]):
+                if any(
+                    abs(sample["elevation"] - elevation) <= tolerance
+                    for sample in [a, b]
+                ):
                     continue
 
-                if (a['elevation'] < elevation) != (b['elevation'] < elevation):
-                    p = (elevation - a['elevation']) / (b['elevation'] - a['elevation'])
-                    t = a['epoch'] + p * (b['epoch'] - a['epoch'])
+                if (a["elevation"] < elevation) != (b["elevation"] < elevation):
+                    p = (elevation - a["elevation"]) / (b["elevation"] - a["elevation"])
+                    t = a["epoch"] + p * (b["epoch"] - a["epoch"])
                     add_sample(t, samples)
                     return True
             return False
@@ -214,22 +225,28 @@ class Transit():
             add_sample((self.start + self.end) / 2, samples)
 
         # We need at least one sample point in the sample set above the desired elevation
-        protrude = max(samples, key=lambda s: s['elevation'])
-        if protrude['elevation'] <= elevation:
-            if not capped_below(elevation, samples):  # prevent expensive calculation on lost causes
+        protrude = max(samples, key=lambda s: s["elevation"])
+        if protrude["elevation"] <= elevation:
+            if not capped_below(
+                elevation, samples
+            ):  # prevent expensive calculation on lost causes
                 protrude = self.peak()
-                add_sample(protrude['epoch'], samples)  # recalculation is wasteful, but this is rare
+                add_sample(
+                    protrude["epoch"], samples
+                )  # recalculation is wasteful, but this is rare
 
-        if protrude['elevation'] <= elevation:
-            start = protrude['epoch']
-            end = protrude['epoch']
+        if protrude["elevation"] <= elevation:
+            start = protrude["epoch"]
+            end = protrude["epoch"]
         else:
             # Aim for elevation + (tolerance / 2) +/- (tolerance / 2) to ensure we're >= elevation
-            while interpolate(samples, elevation + float(tolerance) / 2, float(tolerance) / 2):
+            while interpolate(
+                samples, elevation + float(tolerance) / 2, float(tolerance) / 2
+            ):
                 pass
-            samples = [s for s in samples if s['elevation'] >= elevation]
-            start = samples[0]['epoch']
-            end = samples[-1]['epoch']
+            samples = [s for s in samples if s["elevation"] >= elevation]
+            start = samples[0]["epoch"]
+            end = samples[-1]["epoch"]
         return Transit(self.tle, self.qth, start, end, samples)
 
     def prune(self, fx, epsilon=0.1):
@@ -239,7 +256,7 @@ class Transit():
         either return false everywhere or true for a contiguous period including the peak.
         """
 
-        peak = self.peak()['epoch']
+        peak = self.peak()["epoch"]
         if not fx(peak):
             start = peak
             end = peak
