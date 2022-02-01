@@ -3,11 +3,12 @@ NAME := $(shell python ./setup.py --name)
 ARCH ?= linux_x86_64
 src := predict.py predict.c setup.py
 sdist := dist/$(NAME)-$(VERSION).tar.gz
-wheels := dist/$(NAME)-$(VERSION)-cp27-cp27m-$(ARCH).whl \
-	dist/$(NAME)-$(VERSION)-cp35-cp35m-$(ARCH).whl \
-	dist/$(NAME)-$(VERSION)-cp37-cp37m-$(ARCH).whl \
+wheels := \
+	dist/$(NAME)-$(VERSION)-cp27-cp27m-$(ARCH).whl \
 	dist/$(NAME)-$(VERSION)-cp27-cp27mu-$(ARCH).whl \
+	dist/$(NAME)-$(VERSION)-cp35-cp35m-$(ARCH).whl \
 	dist/$(NAME)-$(VERSION)-cp36-cp36m-$(ARCH).whl \
+	dist/$(NAME)-$(VERSION)-cp37-cp37m-$(ARCH).whl \
 	dist/$(NAME)-$(VERSION)-cp38-cp38-$(ARCH).whl
 
 -include .makerc
@@ -40,6 +41,14 @@ sdist: $(sdist)
 
 $(sdist): $(src)
 	python setup.py sdist
+
+.PHONY: install
+install: build
+	python setup.py install
+
+.PHONY: test
+test: install
+	pytest
 
 .PHONY: upload
 upload: build check-env
