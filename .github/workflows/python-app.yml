@@ -1,28 +1,68 @@
-name: Check Python style
+name: ci
 
-on: pull_request
+on: 
+  push:
+    branches:
+      - master
+    tags:
+      - '**'
+  pull_request: {}
 
 jobs:
   lint:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.10"
-    - name: Check style with `black`
-      uses: psf/black@stable
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # Stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # `exit-zero` treats all errors as warnings.
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Check style with `black`
+        uses: psf/black@stable
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Lint with flake8
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # `exit-zero` treats all errors as warnings.
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build artifacts
+        run: make build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: dist
+          path: ./dist/*
+
+  test:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["2.7", "3.7", "3.8", "3.9"]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Download compiled wheels
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions pytest
+      - name: Run tests
+        run: tox
