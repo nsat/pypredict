@@ -31,16 +31,16 @@ jobs:
           # `exit-zero` treats all errors as warnings.
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
 
-  build_wheels:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v1.12.0 # Need an old version for Python 2 support
+      - name: Build artifacts
+        run: make build
       - uses: actions/upload-artifact@v2
         with:
-          name: wheels
-          path: ./wheelhouse/*.whl
+          name: dist
+          path: ./dist/*
 
   test:
     needs: build_wheels
@@ -58,8 +58,8 @@ jobs:
       - name: Download compiled wheels
         uses: actions/download-artifact@v2
         with:
-          name: wheels
-          path: ./dist
+          name: dist
+          path: dist
       - name: Install test dependencies
         run: |
           python -m pip install --upgrade pip
