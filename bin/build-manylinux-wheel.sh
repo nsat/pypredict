@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -o errexit
+set -o pipefail
+set -o nounset
+
 PYTHON_VERSIONS=$@
 
 if [[ -z "${PYTHON_VERSIONS}" ]] ; then
@@ -14,7 +18,7 @@ fi
 function get-variants() {
     local version="$1"
 
-    if [[ "${version}" = '38' ]] ; then
+    if [[ "${version}" = '38' || "${version}" = '39' ]] ; then
         echo /
     elif [[ "${version}" = '27' ]] ; then
         echo m mu
@@ -23,8 +27,8 @@ function get-variants() {
     fi
 }
 
-cd /io || exit
-mkdir -p dist || exit
+cd /io
+mkdir -p dist
 
 for version in ${PYTHON_VERSIONS} ; do
     for variant in $(get-variants "${version}") ; do
