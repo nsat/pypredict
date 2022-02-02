@@ -7,6 +7,8 @@ setup(
     version="1.6.2",
     author="Jesse Trutna",
     author_email="jesse@spire.com",
+    maintainer="Spire Global Inc",
+    maintainer_email="opensource@spire.com",
     url="https://github.com/nsat/pypredict",
     py_modules=["predict"],
     ext_modules=[Extension("cpredict", ["predict.c"])],
