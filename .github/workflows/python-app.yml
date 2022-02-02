@@ -43,7 +43,7 @@ jobs:
           path: ./dist/*
 
   test:
-    needs: build_wheels
+    needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
