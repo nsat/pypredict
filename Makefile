@@ -50,17 +50,5 @@ test: install
 	pytest
 
 .PHONY: upload
-upload: build check-env
-	twine upload --repository-url ${REPO} --username ${USER} --password "${PASSWORD}" dist/*
-
-.PHONY: check-env
-check-env:
-ifndef REPO
-	$(error $REPO must be specified)
-endif
-ifndef USER
-	$(error USER must be specified)
-endif
-ifndef PASSWORD
-	$(error PASSWORD must be specified)
-endif
+upload: build
+	twine upload wheelhouse/* $(sdist)
