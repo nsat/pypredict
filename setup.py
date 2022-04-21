@@ -12,7 +12,7 @@ setup(
     author_email="jesse@spire.com",
     maintainer="Spire Global Inc",
     maintainer_email="opensource@spire.com",
-    description="Python package for satellite tracking and orbital prediction",
+    description="Interface to the Predict satellite tracking and orbital prediction library",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nsat/pypredict",
