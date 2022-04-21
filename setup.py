@@ -7,11 +7,12 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pypredict",
-    version="1.6.2",
+    version="1.6.3",
     author="Jesse Trutna",
     author_email="jesse@spire.com",
     maintainer="Spire Global Inc",
     maintainer_email="opensource@spire.com",
+    description="Python package for satellite tracking and orbital prediction",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/nsat/pypredict",
