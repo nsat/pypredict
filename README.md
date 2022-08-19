@@ -1,3 +1,5 @@
+[![ci](https://github.com/nsat/pypredict/actions/workflows/python-app.yml/badge.svg)](https://github.com/nsat/pypredict/actions/workflows/python-app.yml)
+
 PyPredict
 =======
 
