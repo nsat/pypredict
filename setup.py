@@ -4,7 +4,7 @@ from setuptools import setup, Extension
 
 setup(
     name="pypredict",
-    version="1.6.2",
+    version="1.7.0",
     author="Jesse Trutna",
     author_email="jesse@spire.com",
     maintainer="Spire Global Inc",
