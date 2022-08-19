@@ -74,7 +74,13 @@ def transits(tle, qth, ending_after=None, ending_before=None):
     ts = ending_after
     while True:
         transit = quick_predict(tle, ts, qth)
-        t = Transit(tle, qth, start=transit[0]["epoch"], end=transit[-1]["epoch"])
+        t = Transit(
+            tle,
+            qth,
+            start=transit[0]["epoch"],
+            end=transit[-1]["epoch"],
+            _samples=transit,
+        )
         if ending_before is not None and t.end > ending_before:
             break
         if t.end > ending_after:
@@ -87,21 +93,30 @@ def active_transit(tle, qth, at=None):
     if at is None:
         at = time.time()
     transit = quick_predict(tle, at, qth)
-    t = Transit(tle, qth, start=transit[0]["epoch"], end=transit[-1]["epoch"])
+    t = Transit(
+        tle, qth, start=transit[0]["epoch"], end=transit[-1]["epoch"], _samples=transit
+    )
     return t if t.start <= at <= t.end else None
 
 
-# Transit is a convenience class representing a pass of a satellite over a groundstation.
 class Transit:
-    def __init__(self, tle, qth, start, end):
+    """A convenience class representing a pass of a satellite over a groundstation."""
+
+    def __init__(self, tle, qth, start, end, _samples=None):
         self.tle = tle
         self.qth = qth
         self.start = start
         self.end = end
+        if _samples is None:
+            self._samples = []
+        else:
+            self._samples = [s for s in _samples if start <= s["epoch"] <= end]
 
-    # return observation within epsilon seconds of maximum elevation
-    # NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval
     def peak(self, epsilon=0.1):
+        """Return observation within epsilon seconds of maximum elevation.
+
+        NOTE: Assumes elevation is strictly monotonic or concave over the [start,end] interval.
+        """
         ts = (self.end + self.start) / 2
         step = self.end - self.start
         while step > epsilon:
@@ -130,14 +145,117 @@ class Transit:
                 ts = next_ts
         return self.at(ts)
 
-    # Return portion of transit above a certain elevation
-    def above(self, elevation):
-        return self.prune(lambda ts: self.at(ts)["elevation"] >= elevation)
+    def above(self, elevation, tolerance=0.001):
+        """Return portion of transit that lies above argument elevation.
 
-    # Return section of a transit where a pruning function is valid.
-    # Currently used to set elevation threshold, unclear what other uses it might have.
-    # fx must either return false everywhere or true for a contiguous period including the peak
+        Elevation at new endpoints will lie between elevation and elevation + tolerance unless
+        endpoint of original transit is already above elevation, in which case it won't change, or
+        entire transit is below elevation target, in which case resulting transit will have zero
+        length.
+        """
+
+        def capped_below(elevation, samples):
+            """Quick heuristic to filter transits that can't reach target elevation.
+
+            Assumes transit is unimodal and derivative is monotonic. i.e. transit is a smooth
+            section of something that has ellipse-like geometry.
+            """
+            limit = None
+
+            if len(samples) < 3:
+                raise ValueError("samples array must have length > 3")
+
+            # Find samples that form a hump
+            for i in range(len(samples) - 2):
+                a, b, c = samples[i : i + 3]
+
+                ae, be, ce = a["elevation"], b["elevation"], c["elevation"]
+                at, bt, ct = a["epoch"], b["epoch"], c["epoch"]
+
+                if ae < be > ce:
+                    left_step = bt - at
+                    right_step = ct - bt
+                    left_slope = (be - ae) / left_step
+                    right_slope = (be - ce) / right_step
+                    limit = be + max(left_step * right_slope, right_step * left_slope)
+                    break
+
+            # If limit isn't set, we didn't find a hump, so max is at one of edges.
+            if limit is None:
+                limit = max(s["elevation"] for s in samples)
+
+            return limit < elevation
+
+        def add_sample(ts, samples):
+            if ts not in [s["epoch"] for s in samples]:
+                samples.append(self.at(ts))
+                samples.sort(key=lambda s: s["epoch"])
+
+        def interpolate(samples, elevation, tolerance):
+            """Interpolate between adjacent samples straddling the elevation target."""
+
+            for i in range(len(samples) - 1):
+                a, b = samples[i : i + 2]
+
+                if any(
+                    abs(sample["elevation"] - elevation) <= tolerance
+                    for sample in [a, b]
+                ):
+                    continue
+
+                if (a["elevation"] < elevation) != (b["elevation"] < elevation):
+                    p = (elevation - a["elevation"]) / (b["elevation"] - a["elevation"])
+                    t = a["epoch"] + p * (b["epoch"] - a["epoch"])
+                    add_sample(t, samples)
+                    return True
+            return False
+
+        # math gets unreliable with a real small elevation tolerances (~1e-6), be safe.
+        if tolerance < 0.0001:
+            raise ValueError("Minimum tolerance of 0.0001")
+
+        # Ensure we've got a well formed set of samples for iterative linear interpolation
+        # We'll need at least three (2 needed for interpolating, 3 needed for filtering speedup)
+        if self.start == self.end:
+            return self
+        samples = self._samples[:]
+        add_sample(self.start, samples)
+        add_sample(self.end, samples)
+        if len(samples) < 3:
+            add_sample((self.start + self.end) / 2, samples)
+
+        # We need at least one sample point in the sample set above the desired elevation
+        protrude = max(samples, key=lambda s: s["elevation"])
+        if protrude["elevation"] <= elevation:
+            if not capped_below(
+                elevation, samples
+            ):  # prevent expensive calculation on lost causes
+                protrude = self.peak()
+                add_sample(
+                    protrude["epoch"], samples
+                )  # recalculation is wasteful, but this is rare
+
+        if protrude["elevation"] <= elevation:
+            start = protrude["epoch"]
+            end = protrude["epoch"]
+        else:
+            # Aim for elevation + (tolerance / 2) +/- (tolerance / 2) to ensure we're >= elevation
+            while interpolate(
+                samples, elevation + float(tolerance) / 2, float(tolerance) / 2
+            ):
+                pass
+            samples = [s for s in samples if s["elevation"] >= elevation]
+            start = samples[0]["epoch"]
+            end = samples[-1]["epoch"]
+        return Transit(self.tle, self.qth, start, end, samples)
+
     def prune(self, fx, epsilon=0.1):
+        """Return section of a transit where a pruning function is valid.
+
+        Currently used to set elevation threshold, unclear what other uses it might have. fx must
+        either return false everywhere or true for a contiguous period including the peak.
+        """
+
         peak = self.peak()["epoch"]
         if not fx(peak):
             start = peak
@@ -194,7 +312,7 @@ def find_solar_periods(
     small_predict_timestep=1,
 ):
     """
-    Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range
+    Finds all sunlit (or eclipse, if eclipse is set) windows for a tle within a time range.
     """
     qth = (
         0,
