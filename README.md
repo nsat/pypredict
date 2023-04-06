@@ -12,7 +12,7 @@ PyPredict is a C Python extension directly adapted from the ubiquitous [predict]
 Originally written for the commodore 64, predict has a proven pedigree; We just aim to provide a convenient API.
 PyPredict is a port of the predict codebase and should yield identical results.
 
-If you think you've found an error in pypredict, please include output from predict on same inputs to the bug report.  
+If you think you've found an error in `pypredict`, please include output from `predict` on same inputs to the bug report.  
 If you think you've found a bug in predict, please report and we'll coordinate with upstream.
 
 ### Installation
@@ -70,7 +70,7 @@ predict.observe(tle, qth) # optional time argument defaults to time.time()
 #    }
 ```
 
-#### Show upcoming transits of satellite over groundstation
+#### Show upcoming transits of satellite over ground station
 
 ```python
 p = predict.transits(tle, qth)
@@ -81,10 +81,10 @@ for _ in xrange(10):
 
 #### Modeling an entire constellation
 
-Generating transits for a lot of satellites over a lot of groundstations can be slow.
-Luckily, generating transits for each satellite-groundstation pair can be parallelized for a big speedup.
+Generating transits for a lot of satellites over a lot of ground stations can be slow.
+Luckily, generating transits for each satellite-groundstation pair can be parallelized for a big speed-up.
 
-```
+```python
 import itertools
 from multiprocessing.pool import Pool
 import time
@@ -117,7 +117,7 @@ transits = flattened_results
 ```
 
 NOTE: If precise accuracy isn't necessary (for modeling purposes, for example) setting the tolerance argument
-      to the `above` call to a larger value, say 1 degree, can provide a signifigant performance boost.
+      to the `above` call to a larger value, say 1 degree, can provide a significant performance boost.
 
 #### Call predict analogs directly
 
