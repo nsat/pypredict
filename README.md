@@ -73,11 +73,17 @@ predict.observe(tle, qth) # optional time argument defaults to time.time()
 #### Show upcoming transits of satellite over ground station
 
 ```python
-p = predict.transits(tle, qth)
-for _ in xrange(10):
-	transit = p.next()
-	print("%f\t%f\t%f" % (transit.start, transit.duration(), transit.peak()['elevation']))
+# start and stop transit times as UNIX timestamp
+transit_start = 1680775200
+transit_stop = 1681034400
+
+p = predict.transits(tle, qth, transit_start, transit_stop)
+
+print("Start of Transit\tTransit Duration (s)\tPeak Elevation")
+for transit in p:
+    print(f"{transit.start}\t{transit.duration()}\t{transit.peak()['elevation']}")
 ```
+
 
 #### Modeling an entire constellation
 
