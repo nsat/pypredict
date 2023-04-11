@@ -18,7 +18,7 @@ help:
 	@echo "  clean:  Removes distribution folders and artifacts from building"
 	@echo "  build:  Builds source and wheel distributions"
 	@echo "  upload: Uploads built source and wheel distributions to repository"
-	@echo "          Requires env vars `REPO`, `USER`, `PASSWORD`"
+	@echo "          Requires env vars REPO, USER, PASSWORD"
 
 .PHONY: clean
 clean:
