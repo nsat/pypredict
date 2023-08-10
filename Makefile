@@ -1,5 +1,5 @@
-VERSION := $(shell python ./setup.py --version)
-NAME := $(shell python ./setup.py --name)
+VERSION := $(shell python3 ./setup.py --version)
+NAME := $(shell python3 ./setup.py --name)
 ARCH ?= linux_x86_64
 src := predict.py predict.c setup.py
 sdist := dist/$(NAME)-$(VERSION).tar.gz
@@ -42,11 +42,11 @@ $(wheels): $(src)
 sdist: $(sdist)
 
 $(sdist): $(src)
-	python setup.py sdist
+	python3 setup.py sdist
 
 .PHONY: install
 install: build
-	python setup.py install
+	python3 setup.py install
 
 .PHONY: test
 test: install
