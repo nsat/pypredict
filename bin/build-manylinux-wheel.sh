@@ -18,7 +18,7 @@ fi
 function get-variants() {
     local version="$1"
 
-    if [[ "${version}" = '38' || "${version}" = '39' ]] ; then
+    if [[ "${version}" = '38' || "${version}" = '39' || "${version}" = '310' || "${version}" = '311' ]] ; then
         echo /
     elif [[ "${version}" = '27' ]] ; then
         echo m mu
@@ -34,8 +34,6 @@ for version in ${PYTHON_VERSIONS} ; do
     for variant in $(get-variants "${version}") ; do
         "/opt/python/cp${version}-cp${version}${variant}/bin/pip" --no-cache-dir wheel /io -w dist/
     done
-done
 
-for f in dist/*.whl ; do
-    /usr/local/bin/auditwheel repair "${f}"
+    /usr/local/bin/auditwheel repair dist/*cp${version}-cp*
 done
