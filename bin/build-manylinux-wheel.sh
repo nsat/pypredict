@@ -18,7 +18,7 @@ fi
 function get-variants() {
     local version="$1"
 
-    if [[ "${version}" = '38' || "${version}" = '39' || "${version}" = '310' || "${version}" = '311' ]] ; then
+    if [[ "${version}" = '38' || "${version}" = '39' || "${version}" = '310' || "${version}" = '311' || "${version}" = '312' ]] ; then
         echo /
     elif [[ "${version}" = '27' ]] ; then
         echo m mu

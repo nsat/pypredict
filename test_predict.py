@@ -1,6 +1,8 @@
 import predict
 import pytest
 
+from cpredict import PredictException
+
 TLE = (
     "0 ISS (ZARYA)\n"
     "1 25544U 98067A   23096.18845088  .00017407  00000-0  31715-3 0  9991\n"
@@ -32,9 +34,9 @@ def test_transits_are_truncated_if_the_overlap_the_start_or_end_times():
 def test_predict_of_tle_older_than_a_year():
     # Test a TLE older than a year with a timestamp within a year of its epoch
     # Should not throw an exception
-    obs = predict.quick_predict(TLE, T1_WITHIN_A_YEAR, QTH)
+    predict.quick_predict(TLE, T1_WITHIN_A_YEAR, QTH)
 
     # Test a TLE older than a year with a timestamp outwith a year of its epoch
     # Should raise a PredictException
     with pytest.raises(PredictException) as e_info:
-        obs = predict.quick_predict(TLE, T2_AFTER_A_YEAR, QTH)
+        predict.quick_predict(TLE, T2_AFTER_A_YEAR, QTH)
