@@ -119,14 +119,6 @@
 static PyObject *PredictException;
 static PyObject *NoTransitException;
 
-/*
-  TODO: This is a refactoring hack to ensure we get consistent before/after
-        tests.  Freezes the clock to a specified time, making calculations
-        deterministic. (remove when finished along with (2) call sites)
-*/
-char debug_freeze_time = 0;
-struct tm debug_frozen_tm = { tm_year: 114, tm_mon: 10, tm_mday: 2 };
-
 // This struct represents an observation of a particular satellite
 // from a particular reference point (on earth) at a particular time
 // and is used primarily in the PyPredict code.
@@ -175,8 +167,8 @@ struct	{
  	   long catnum;          // Catalog Number (a.k.a NORAD id)
 	   long setnum;          // Element Set No.
 	   char designator[10];  // Designator
- 	   int year;             // Reference Epoch (year?) (?)
-	   double refepoch;      // Reference Epoch (?)
+	   int year;             // Reference Epoch from TLE (2-digit year)
+	   double refepoch;      // Reference Epoch from TLE (day of the year and fractional portion of the day)
 	   double incl;          // Inclination
 	   double raan;          // RAAN
 	   double eccn;          // Eccentricity
@@ -2083,13 +2075,6 @@ void Calculate_RADec(double time, vector_t *pos, vector_t *vel, geodetic_t *geod
 
 time_t CurrentTime()
 {
-	//TODO: Refactoring Hack (remove)
-	if (debug_freeze_time)
-	{
-		time_t debug_frozen_time = mktime(&debug_frozen_tm);
-		return debug_frozen_time;
-	}
-
 	return time(NULL);
 }
 
@@ -2610,14 +2595,6 @@ double CurrentDaynum()
 {
 	/* Read the system clock and return the number
 	   of days since 31Dec79 00:00:00 UTC (daynum 0) */
-
-	//TODO: Refactoring Hack (remove)
-	if (debug_freeze_time)
-	{
-		time_t debug_frozen_time = mktime(&debug_frozen_tm);
-		return ((((double)debug_frozen_time)/86400.0) - 3651.0);
-	}
-
 	int x;
 	struct timeval tptr;
 	double usecs, seconds;
@@ -2628,44 +2605,6 @@ double CurrentDaynum()
 	seconds=usecs+(double)tptr.tv_sec;
 
 	return ((seconds/86400.0)-3651.0);
-}
-
-char *Daynum2String(daynum)
-double daynum;
-{
-	/* This function takes the given epoch as a fractional number of
-	   days since 31Dec79 00:00:00 UTC and returns the corresponding
-	   date as a string of the form "Tue 12Oct99 17:22:37". */
-
-	char timestr[26];
-	time_t t;
-	int x;
-
-	/* Convert daynum to Unix time (seconds since 01-Jan-70) */
-	t=(time_t)(86400.0*(daynum+3651.0));
-
-	sprintf(timestr,"%s",asctime(gmtime(&t)));
-
-	if (timestr[8]==' ')
-	{
-		timestr[8]='0';
-	}
-
-	for (x=0; x<=3; output[x]=timestr[x], x++);
-
-	output[4]=timestr[8];
-	output[5]=timestr[9];
-	output[6]=timestr[4];
-	output[7]=timestr[5];
-	output[8]=timestr[6];
-	output[9]=timestr[22];
-	output[10]=timestr[23];
-	output[11]=' ';
-
-	for (x=12; x<=19; output[x]=timestr[x-1], x++);
-
-	output[20]=0;
-	return output;
 }
 
 void FindMoon(double daynum)
@@ -3543,7 +3482,7 @@ static char quick_find_docs[] =
 
 static PyObject* quick_predict(PyObject* self, PyObject *args)
 {
-	double now;
+	double tle_epoch;
 	int lastel=0;
 	char errbuff[100];
 	observation obs = { 0 };
@@ -3554,18 +3493,16 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	now=CurrentDaynum();
-
 	if (load(args) != 0)
 	{
 		// load will set the appropriate exception string if it fails.
 		goto cleanup_and_raise_exception;
 	}
 
-	//TODO: Seems like this should be based on the freshness of the TLE, not wall clock.
-	if ((daynum<now-365.0) || (daynum>now+365.0))
+	tle_epoch=(double)DayNum(1,0,sat.year)+sat.refepoch;
+	if ((daynum<tle_epoch-365.0) || (daynum>tle_epoch+365.0))
 	{
-		sprintf(errbuff, "time %s too far from present\n", Daynum2String(daynum));
+		sprintf(errbuff, "day number %.0f too far from tle epoch day %.0f\n", daynum, tle_epoch);
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
