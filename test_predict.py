@@ -31,6 +31,7 @@ def test_transits_are_truncated_if_the_overlap_the_start_or_end_times():
     # should not raise a StopIteration
     next(predict.transits(tle, qth, ending_after=at))
 
+
 def test_predict_of_tle_older_than_a_year():
     # Test a TLE older than a year with a timestamp within a year of its epoch
     # Should not throw an exception
