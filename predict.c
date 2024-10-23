@@ -2164,41 +2164,57 @@ char *Abbreviate(char *string, int n)
 	return temp;
 }
 
-char KepCheck(char *line1, char *line2)
+#include <stdbool.h>
+
+static bool checksum_tle(const char *tle_0, const char *tle_1)
 {
-	/* This function scans line 1 and line 2 of a NASA 2-Line element
-	   set and returns a 1 if the element set appears to be valid or
-	   a 0 if it does not.  If the data survives this torture test,
-	   it's a pretty safe bet we're looking at a valid 2-line
-	   element set and not just some random text that might pass
-	   as orbital data based on a simple checksum calculation alone. */
+  int i, check_a, check_b;
 
-	int x;
-	unsigned sum1, sum2;
+  if(strlen(tle_0) < 69)
+  {
+    return false;
+  }
 
-	/* Compute checksum for each line */
+  if(strlen(tle_1) < 69)
+  {
+    return false;
+  }
 
-	for (x=0, sum1=0, sum2=0; x<=67; sum1+=val[(int)line1[x]], sum2+=val[(int)line2[x]], x++);
+  check_a = 0;
+  check_b = 0;
 
-	/* Perform a "torture test" on the data */
+  for(i=0; i<68; i++)
+  {
+    if(isdigit(tle_0[i]))
+    {
+      check_a += tle_0[i] - '0';
+    }
+    else if(tle_0[i] == '-')
+    {
+      check_a += 1;
+    }
+    
+    if(isdigit(tle_1[i]))
+    {
+      check_b += tle_1[i] - '0';
+    }
+    else if(tle_1[i] == '-')
+    {
+      check_b += 1;
+    }
+  }
 
-	x=(val[(int)line1[68]]^(sum1%10)) | (val[(int)line2[68]]^(sum2%10)) |
-	  (line1[0]^'1')  | (line1[1]^' ')  | (line1[7]^'U')  |
-	  (line1[8]^' ')  | (line1[17]^' ') | (line1[23]^'.') |
-	  (line1[32]^' ') | (line1[34]^'.') | (line1[43]^' ') |
-	  (line1[52]^' ') | (line1[61]^' ') | (line1[62]^'0') |
-	  (line1[63]^' ') | (line2[0]^'2')  | (line2[1]^' ')  |
-	  (line2[7]^' ')  | (line2[11]^'.') | (line2[16]^' ') |
-	  (line2[20]^'.') | (line2[25]^' ') | (line2[33]^' ') |
-	  (line2[37]^'.') | (line2[42]^' ') | (line2[46]^'.') |
-	  (line2[51]^' ') | (line2[54]^'.') | (line1[2]^line2[2]) |
-	  (line1[3]^line2[3]) | (line1[4]^line2[4]) |
-	  (line1[5]^line2[5]) | (line1[6]^line2[6]) |
-	  (isdigit(line1[68]) ? 0 : 1) | (isdigit(line2[68]) ? 0 : 1) |
-	  (isdigit(line1[18]) ? 0 : 1) | (isdigit(line1[19]) ? 0 : 1) |
-	  (isdigit(line2[31]) ? 0 : 1) | (isdigit(line2[32]) ? 0 : 1);
+  if((check_a % 10) != (tle_0[68] - '0'))
+  {
+    return false;
+  }
+  
+  if((check_b % 10) != (tle_1[68] - '0'))
+  {
+    return false;
+  }
 
-	return (x ? 0 : 1);
+  return true;
 }
 
 void InternalUpdate(int x)
@@ -2433,7 +2449,7 @@ char ReadTLE(char *line0, char *line1, char *line2)
 	a = ((la == 0) || (la >= sizeof(sat.name)));
 	b = ((lb == 0) || (lb >= sizeof(sat.line1)));
 	c = ((lc == 0) || (lc >= sizeof(sat.line2)));
-	d = !KepCheck(line1, line2);
+	d = !checksum_tle(line1, line2);
 	error_flags = (a << 3) | (b << 2) | (c << 1) | (d << 0);
 
 	if (error_flags == 0)
@@ -3401,7 +3417,7 @@ PyObject * PythonifyObservation(observation * obs) {
 char load(PyObject *args)
 {
 	//TODO: Not threadsafe, detect and raise warning?
-	int x;
+	int x, tle_error;
 	char *env=NULL;
 
 	/* Set up translation table for computing TLE checksums */
@@ -3420,9 +3436,22 @@ char load(PyObject *args)
 		return -1;
 	};
 
-	if (ReadTLE(tle0,tle1,tle2) != 0)
-	{
-		PyErr_SetString(PredictException, "Unable to process TLE");
+	tle_error = ReadTLE(tle0,tle1,tle2);
+
+	if (tle_error & 8) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Name line missing or too long.");
+		return -1;
+	} else if (tle_error & 4) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Line 1 missing or too long.");
+		return -1;
+	} else if (tle_error & 2) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Line 2 missing or too long.");
+		return -1;
+	} else if (tle_error & 1) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Checksum error.");
+		return -1;
+	} else if (tle_error != 0) {
+		PyErr_SetString(PredictException, "Unable to process TLE: Unknown error.");
 		return -1;
 	}
 
