@@ -3285,7 +3285,7 @@ int MakeObservation(double obs_time, struct observation * obs) {
     //printw(17+bshift,1,"-------------   -------------   -------------   ------------      ------------");
 
     obs->norad_id = sat.catnum;
-    strncpy(&(obs->name), &(sat.name), sizeof(obs->name));
+    strncpy((char *restrict)&(obs->name), (const char*restrict) &(sat.name), sizeof(obs->name));
     obs->epoch = (daynum+3651.0)*(86400.0); //See daynum=((start/86400.0)-3651.0);
     obs->latitude = sat_lat;
     obs->longitude = sat_lon;
@@ -3297,7 +3297,7 @@ int MakeObservation(double obs_time, struct observation * obs) {
     obs->slant_range = sat_range;
     obs->eclipse_depth = eclipse_depth/deg2rad;
     obs->orbital_phase = 256.0*(phase/twopi);
-    strncpy(&(obs->orbital_model), &(ephem), sizeof(obs->orbital_model));
+    strncpy((char *restrict)&(obs->orbital_model), (const char*restrict)&(ephem), sizeof(obs->orbital_model));
     obs->visibility = visibility;
     obs->sunlit = sunlit;
     obs->orbit = rv;
