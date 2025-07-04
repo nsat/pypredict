@@ -1110,7 +1110,7 @@ void Deep(int ientry, tle_t * tle, deep_arg_t * deep_arg)
 	g533, gam, sinq, sinzf, sis, sl, sll, sls, stem, temp, temp1, x1,
 	x2, x2li, x2omi, x3, x4, x5, x6, x7, x8, xl, xldot, xmao, xnddt,
 	xndot, xno2, xnodce, xnoi, xomi, xpidot, z1, z11, z12, z13, z2,
-	z21, z22, z23, z3, z31, z32, z33, ze, zf, zm, zmo, zn, zsing,
+	z21, z22, z23, z3, z31, z32, z33, ze, zf, zm, zn, zsing,
 	zsinh, zsini, zcosg, zcosh, zcosi, delt=0, ft=0;
 
 	switch (ientry)
@@ -1164,7 +1164,6 @@ void Deep(int ientry, tle_t * tle, deep_arg_t * deep_arg)
 		  cc=c1ss;
 		  zn=zns;
 		  ze=zes;
-		  zmo=zmos;
 		  xnoi=1/xnq;
 
 		  /* Loop breaks when Solar terms are done a second */
@@ -1269,7 +1268,6 @@ void Deep(int ientry, tle_t * tle, deep_arg_t * deep_arg)
 			zn=znl;
 			cc=c1l;
 			ze=zel;
-			zmo=zmol;
 			SetFlag(LUNAR_TERMS_DONE_FLAG);
 		}
 
@@ -2099,7 +2097,7 @@ double PrimeAngle(double x)
 	return x;
 }
 
-char *SubString(char *string, char start, char end)
+char *SubString(char *string, unsigned start, unsigned end)
 {
 	/* This function returns a substring based on the starting
 	   and ending positions provided.  It is used heavily in
@@ -2127,7 +2125,7 @@ char *SubString(char *string, char start, char end)
 	}
 }
 
-void CopyString(char *source, char *destination, char start, char end)
+void CopyString(char *source, char *destination, unsigned start, unsigned end)
 {
 	/* This function copies elements of the string "source"
 	   bounded by "start" and "end" into the string "destination". */
@@ -2201,7 +2199,7 @@ char KepCheck(const char *line1, const char *line2)
 	return (x ? 0 : 1);
 }
 
-void InternalUpdate(int x)
+void InternalUpdate(void)
 {
 	/* Updates data in TLE structure based on
 	   line1 and line2 stored in structure. */
@@ -2249,7 +2247,7 @@ char *noradEvalue(double value)
 	return output;
 }
 
-void Data2TLE(int x)
+void Data2TLE(void)
 {
 	/* This function converts orbital data held in the numeric
 	   portion of the sat tle structure to ASCII TLE format,
@@ -2424,7 +2422,7 @@ double ReadBearing(char *input)
 
 char ReadTLE(const char *line0, const char *line1, const char *line2)
 {
-	int la, lb, lc;
+	unsigned int la, lb, lc;
 	char error_flags,a,b,c,d;
 
 	la = strnlen(line0,sizeof(sat.name));
@@ -2441,7 +2439,7 @@ char ReadTLE(const char *line0, const char *line1, const char *line2)
 		strncpy(sat.name,line0,sizeof(sat.name)-1);
 		strncpy(sat.line1,line1,sizeof(sat.line1)-1);
 		strncpy(sat.line2,line2,sizeof(sat.line2)-1);
-		InternalUpdate(0);
+		InternalUpdate();
 	}
 
 	return error_flags;
@@ -2555,7 +2553,7 @@ void SaveTLE()
 
 	fd=fopen(tlefile,"w");
 
-	Data2TLE(0);
+	Data2TLE();
 
 	/* Write name, line1, line2 to predict.tle */
 
@@ -2595,11 +2593,10 @@ double CurrentDaynum()
 {
 	/* Read the system clock and return the number
 	   of days since 31Dec79 00:00:00 UTC (daynum 0) */
-	int x;
 	struct timeval tptr;
 	double usecs, seconds;
 
-	x=gettimeofday(&tptr,NULL);
+	gettimeofday(&tptr,NULL);
 
 	usecs=0.000001*(double)tptr.tv_usec;
 	seconds=usecs+(double)tptr.tv_sec;
@@ -2617,7 +2614,7 @@ void FindMoon(double daynum)
 	   http://www.geocities.com/s_perona/ingles/poslun.htm. */
 
 	double	jd, ss, t, t1, t2, t3, d, ff, l1, m, m1, ex, om, l,
-		b, w1, w2, bt, p, lm, h, ra, dec, z, ob, n, e, el,
+		b, w1, w2, bt, p, lm, h, ra, dec, z, ob, n, el,
 		az, teg, th, mm, dv;
 
 	jd=daynum+2444238.5;
@@ -2758,7 +2755,6 @@ void FindMoon(double daynum)
 	/* dec = declination */
 
 	n=qth.stnlat*deg2rad;    /* North latitude of tracking station */
-	e=-qth.stnlong*deg2rad;  /* East longitude of tracking station */
 
 	/* Find siderial time in radians */
 
@@ -2843,7 +2839,7 @@ void FindSun(double daynum)
 	sun_dec=Degrees(solar_rad.y);
 }
 
-void PreCalc(int x)
+void PreCalc(void)
 {
 	/* This function copies TLE data from PREDICT's sat structure
 	   to the SGP4/SDP4's single dimensioned tle structure, and
@@ -3060,7 +3056,7 @@ void Calc()
 	}
 }
 
-char AosHappens(int x)
+char AosHappens(void)
 {
 	/* This function returns a 1 if the satellite pointed to by
 	   "x" can ever rise above the horizon of the ground station. */
@@ -3094,7 +3090,7 @@ char AosHappens(int x)
 	}
 }
 
-char Decayed(int x, double time)
+char Decayed(double time)
 {
 	/* This function returns a 1 if it appears that the
 	   satellite pointed to by 'x' has decayed at the
@@ -3120,7 +3116,7 @@ char Decayed(int x, double time)
 	}
 }
 
-char Geostationary(int x)
+char Geostationary(void)
 {
 	/* This function returns a 1 if the satellite pointed
 	   to by "x" appears to be in a geostationary orbit */
@@ -3142,7 +3138,7 @@ double FindAOS()
 	int iterations = 0;
 	aostime=0.0;
 
-	if (AosHappens(indx) && Geostationary(indx)==0 && Decayed(indx,daynum)==0)
+	if (AosHappens() && Geostationary()==0 && Decayed(daynum)==0)
 	{
 		Calc();
 
@@ -3179,7 +3175,7 @@ double FindLOS()
 {
 	lostime=0.0;
 
-	if (Geostationary(indx)==0 && AosHappens(indx)==1 && Decayed(indx,daynum)==0)
+	if (Geostationary()==0 && AosHappens()==1 && Decayed(daynum)==0)
 	{
 		Calc();
 
@@ -3221,7 +3217,7 @@ double NextAOS()
 
 	aostime=0.0;
 
-	if (AosHappens(indx) && Geostationary(indx)==0 && Decayed(indx,daynum)==0)
+	if (AosHappens() && Geostationary()==0 && Decayed(daynum)==0)
 	{
 		daynum=FindLOS2()+0.014;  /* Move to LOS + 20 minutes */
 	}
@@ -3238,9 +3234,9 @@ double NextAOS()
 //
 int MakeObservation(double obs_time, struct observation * obs) {
     char geostationary=0, aoshappens=0, decayed=0, visibility=0, sunlit;
-    double doppler100=0.0, delay;
+    double doppler100=0.0;
 
-    PreCalc(0);
+    PreCalc();
     indx=0;
 
     if (sat_db.transponders>0)
@@ -3250,9 +3246,9 @@ int MakeObservation(double obs_time, struct observation * obs) {
     }
 
     daynum=obs_time;
-    aoshappens=AosHappens(indx);
-    geostationary=Geostationary(indx);
-    decayed=Decayed(indx,0.0);
+    aoshappens=AosHappens();
+    geostationary=Geostationary();
+    decayed=Decayed(0.0);
 
     //Calcs
     Calc();
@@ -3272,7 +3268,6 @@ int MakeObservation(double obs_time, struct observation * obs) {
     sunlit = sat_sun_status;
 
     doppler100=-100.0e06*((sat_range_rate*1000.0)/299792458.0);
-    delay=1000.0*((1000.0*sat_range)/299792458.0);
 
     //TODO: Seems like FindSun(daynum) should go in here
     FindMoon(daynum);
@@ -3466,6 +3461,7 @@ char load(PyObject *args)
 
 static PyObject* quick_find(PyObject* self, PyObject *args)
 {
+    (void)self;
 	struct observation obs = { 0 };
 
 	if (load(args) != 0 || MakeObservation(daynum, &obs) != 0)
@@ -3482,6 +3478,7 @@ static char quick_find_docs[] =
 
 static PyObject* quick_predict(PyObject* self, PyObject *args)
 {
+    (void)self;
 	double tle_epoch;
 	int lastel=0;
 	char errbuff[100];
@@ -3507,7 +3504,7 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	PreCalc(0);
+	PreCalc();
 	Calc();
 	if (MakeObservation(daynum, &obs) != 0)
 	{
@@ -3515,21 +3512,21 @@ static PyObject* quick_predict(PyObject* self, PyObject *args)
 		goto cleanup_and_raise_exception;
 	}
 
-	if (!AosHappens(0))
+	if (!AosHappens())
 	{
 		sprintf(errbuff, "%lu does not rise above horizon. No AOS.\n", sat.catnum);
 		PyErr_SetString(NoTransitException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
-	if (Geostationary(0)!=0)
+	if (Geostationary()!=0)
 	{
 		sprintf(errbuff, "%lu is geostationary.  Does not transit.\n", sat.catnum);
 		PyErr_SetString(PredictException, errbuff);
 		goto cleanup_and_raise_exception;
 	}
 
-	if (Decayed(indx,daynum)!=0)
+	if (Decayed(daynum)!=0)
 	{
 		sprintf(errbuff, "%lu has decayed. Cannot calculate transit.\n", sat.catnum);
 		PyErr_SetString(PredictException, errbuff);
