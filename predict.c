@@ -2164,7 +2164,7 @@ char *Abbreviate(char *string, int n)
 	return temp;
 }
 
-char KepCheck(char *line1, char *line2)
+char KepCheck(const char *line1, const char *line2)
 {
 	/* This function scans line 1 and line 2 of a NASA 2-Line element
 	   set and returns a 1 if the element set appears to be valid or
@@ -2422,7 +2422,7 @@ double ReadBearing(char *input)
 	return bearing;
 }
 
-char ReadTLE(char *line0, char *line1, char *line2)
+char ReadTLE(const char *line0, const char *line1, const char *line2)
 {
 	int la, lb, lc;
 	char error_flags,a,b,c,d;
@@ -3285,7 +3285,7 @@ int MakeObservation(double obs_time, struct observation * obs) {
     //printw(17+bshift,1,"-------------   -------------   -------------   ------------      ------------");
 
     obs->norad_id = sat.catnum;
-    strncpy(&(obs->name), &(sat.name), sizeof(obs->name));
+    strncpy(obs->name, sat.name, sizeof(obs->name));
     obs->epoch = (daynum+3651.0)*(86400.0); //See daynum=((start/86400.0)-3651.0);
     obs->latitude = sat_lat;
     obs->longitude = sat_lon;
@@ -3297,7 +3297,7 @@ int MakeObservation(double obs_time, struct observation * obs) {
     obs->slant_range = sat_range;
     obs->eclipse_depth = eclipse_depth/deg2rad;
     obs->orbital_phase = 256.0*(phase/twopi);
-    strncpy(&(obs->orbital_model), &(ephem), sizeof(obs->orbital_model));
+    strncpy(obs->orbital_model, ephem, sizeof(obs->orbital_model));
     obs->visibility = visibility;
     obs->sunlit = sunlit;
     obs->orbit = rv;
@@ -3322,7 +3322,7 @@ int MakeObservation(double obs_time, struct observation * obs) {
 }
 
 void PrintObservation(struct observation * obs) {
-    printf("NORAD_ID        %d\n", obs->norad_id);
+    printf("NORAD_ID        %ld\n", obs->norad_id);
     printf("Name            %s\n", obs->name);
     printf("Date(epoch)     %f\n", obs->epoch);
     printf("Latitude(N)     %f\n", obs->latitude);
