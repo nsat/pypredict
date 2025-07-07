@@ -2071,7 +2071,7 @@ void Calculate_RADec(double time, vector_t *pos, vector_t *vel, geodetic_t *geod
 
 /* .... SGP4/SDP4 functions end .... */
 
-time_t CurrentTime()
+time_t CurrentTime(void)
 {
 	return time(NULL);
 }
@@ -2461,7 +2461,7 @@ char ReadQTH(double lat, double lon, long alt)
 }
 
 
-char ReadQTHFile()
+char ReadQTHFile(void)
 {
 	FILE *fd;
 
@@ -2529,7 +2529,7 @@ char CopyFile(char *source, char *destination)
 	return error;
 }
 
-void SaveQTH()
+void SaveQTH(void)
 {
 	/* This function saves QTH data to the QTH data file. */
 
@@ -2545,7 +2545,7 @@ void SaveQTH()
 	fclose(fd);
 }
 
-void SaveTLE()
+void SaveTLE(void)
 {
 	FILE *fd;
 
@@ -2589,7 +2589,7 @@ long DayNum(int m, int d, int y)
 	return dn;
 }
 
-double CurrentDaynum()
+double CurrentDaynum(void)
 {
 	/* Read the system clock and return the number
 	   of days since 31Dec79 00:00:00 UTC (daynum 0) */
@@ -2884,7 +2884,7 @@ void PreCalc(void)
 	select_ephemeris(&tle);
 }
 
-void Calc()
+void Calc(void)
 {
 	/* This is the stuff we need to do repetitively while tracking. */
 
@@ -3131,7 +3131,7 @@ char Geostationary(void)
 	}
 }
 
-double FindAOS()
+double FindAOS(void)
 {
 	/* This function finds and returns the time of AOS (aostime). */
 
@@ -3171,7 +3171,7 @@ double FindAOS()
 	return aostime;
 }
 
-double FindLOS()
+double FindLOS(void)
 {
 	lostime=0.0;
 
@@ -3195,7 +3195,7 @@ double FindLOS()
 	return lostime;
 }
 
-double FindLOS2()
+double FindLOS2(void)
 {
 	/* This function steps through the pass to find LOS.
 	   FindLOS() is called to "fine tune" and return the result. */
@@ -3210,7 +3210,7 @@ double FindLOS2()
 	return(FindLOS());
 }
 
-double NextAOS()
+double NextAOS(void)
 {
 	/* This function finds and returns the time of the next
 	   AOS for a satellite that is currently in range. */
