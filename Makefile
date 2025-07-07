@@ -50,7 +50,7 @@ install: build
 	python3 setup.py install
 
 .PHONY: test
-test: install
+test:
 	pytest
 
 .PHONY: upload
