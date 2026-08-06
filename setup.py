@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="pypredict",
-    version="1.8.0",
+    version="1.8.1",
     author="Jesse Trutna",
     author_email="jesse@spire.com",
     maintainer="Spire Global Inc",
@@ -27,5 +27,7 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
+        "Programming Language :: Python :: 3.15",
     ],
 )

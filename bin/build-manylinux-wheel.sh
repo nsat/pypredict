@@ -20,6 +20,8 @@ function get-variants() {
 
     if [[ "${version}" = '27' ]] ; then
         echo m mu
+    elif [[ "${version}" = '314' ]] || [[ "${version}" = '315' ]] ; then
+        echo / t
     else
         echo /
     fi
