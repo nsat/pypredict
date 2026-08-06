@@ -36,7 +36,10 @@ manylinux-wheels: $(wheels)
 $(wheels): $(src)
 	docker run --user $(shell id -u):$(shell id -g) -v $(shell pwd):/io \
 		quay.io/pypa/manylinux1_x86_64:latest \
-		/io/bin/build-manylinux-wheel.sh 27 38 39
+		/io/bin/build-manylinux-wheel.sh 27
+	docker run --user $(shell id -u):$(shell id -g) -v $(shell pwd):/io \
+		quay.io/pypa/manylinux2010_x86_64:latest \
+		/io/bin/build-manylinux-wheel.sh 38 39
 	docker run --user $(shell id -u):$(shell id -g) -v $(shell pwd):/io \
 		quay.io/pypa/manylinux_2_28_x86_64:latest \
 		/io/bin/build-manylinux-wheel.sh 310 311 312 313 314
