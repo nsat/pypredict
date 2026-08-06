@@ -8,7 +8,6 @@ from cpredict import PredictException
 from cpredict import quick_find as _quick_find
 from cpredict import quick_predict as _quick_predict
 
-
 SolarWindow = namedtuple("SolarWindow", ["start", "end"])
 
 
