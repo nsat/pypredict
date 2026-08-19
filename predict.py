@@ -32,7 +32,7 @@ def _checksum(line):
     for c in line[:68]:
         if c.isdigit():
             s += int(c)
-        elif c == '-':
+        elif c == "-":
             s += 1
     return s % 10
 
@@ -49,8 +49,8 @@ def _tle_epoch_to_iso(epoch_str):
 
 def _parse_exp(field):
     field = field.strip()
-    field = field.replace('-', 'e-')
-    field = field.replace('+', 'e+')
+    field = field.replace("-", "e-")
+    field = field.replace("+", "e+")
     return "0." + field
 
 
@@ -69,7 +69,9 @@ def _tle_to_omm(line0, line1, line2):
     omm["NORAD_CAT_ID"] = line1[2:7].strip()
     omm["CLASSIFICATION_TYPE"] = line1[7:8].strip()
     year = int(line1[9:11])
-    omm["OBJECT_ID"] = "20" if year < 57 else "19" + line1[9:11] + "-" + line1[11:17].strip()
+    omm["OBJECT_ID"] = (
+        "20" if year < 57 else "19" + line1[9:11] + "-" + line1[11:17].strip()
+    )
     omm["EPOCH"] = _tle_epoch_to_iso(line1[18:32].strip())
     omm["MEAN_MOTION_DOT"] = "0" + line1[33:43].strip()
     omm["MEAN_MOTION_DDOT"] = _parse_exp(line1[44:52])
@@ -256,7 +258,7 @@ class Transit:
 
             # Find samples that form a hump
             for i in range(len(samples) - 2):
-                a, b, c = samples[i: i + 3]
+                a, b, c = samples[i : i + 3]
 
                 ae, be, ce = a["elevation"], b["elevation"], c["elevation"]
                 at, bt, ct = a["epoch"], b["epoch"], c["epoch"]
@@ -284,7 +286,7 @@ class Transit:
             """Interpolate between adjacent samples straddling the elevation target."""
 
             for i in range(len(samples) - 1):
-                a, b = samples[i: i + 2]
+                a, b = samples[i : i + 2]
 
                 if any(
                     abs(sample["elevation"] - elevation) <= tolerance
