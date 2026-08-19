@@ -1,6 +1,7 @@
 import sys
-import os
 import time
+
+from datetime import datetime, timedelta, timezone
 
 from collections import namedtuple
 from copy import copy
@@ -26,25 +27,88 @@ def quick_predict(tle, ts, qth):
 STR_TYPE = str if sys.version_info.major > 2 else basestring  # noqa: F821
 
 
-def host_qth(path="~/.predict/predict.qth"):
-    path = os.path.abspath(os.path.expanduser(path))
-    try:
-        with open(path) as qthfile:
-            raw = [line.strip() for line in qthfile.readlines()]
-            assert len(raw) == 4, "must match:\nname\nlat(N)\nlong(W)\nalt" % path
-            return massage_qth(raw[1:])
-    except Exception as e:
-        raise PredictException("Unable to process qth '%s' (%s)" % (path, e))
+def _checksum(line):
+    s = 0
+    for c in line[:68]:
+        if c.isdigit():
+            s += int(c)
+        elif c == '-':
+            s += 1
+    return s % 10
 
 
+def _tle_epoch_to_iso(epoch_str):
+    year = int(epoch_str[:2])
+    year += 2000 if year < 57 else 1900   # standard TLE pivot year
+    day_of_year = float(epoch_str[2:])
+
+    dt = datetime(year, 1, 1, tzinfo=timezone.utc) + timedelta(days=day_of_year - 1)
+    # Format with microsecond precision, trimmed
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+
+def _parse_exp(field):
+    field = field.strip()
+    field = field.replace('-', 'e-')
+    field = field.replace('+', 'e+')
+    return "0." + field
+
+
+def tle_to_omm(line0, line1, line2):
+    omm = {}
+
+    assert line1[0:1] == "1", "TLE Line 1 does not start with 1"
+    assert line2[0:1] == "2", "TLE Line 2 does not start with 2"
+    assert str(_checksum(line1)) == line1[68:69], "TLE Line 1 checksum failed"
+    assert str(_checksum(line2)) == line2[68:69], "TLE Line 2 checksum failed"
+
+    # Line 0
+    omm["OBJECT_NAME"] = line0.strip()
+
+    # Line 1
+    omm["NORAD_CAT_ID"] = line1[2:7].strip()
+    omm["CLASSIFICATION_TYPE"] = line1[7:8].strip()
+    year = int(line1[9:11])
+    omm["OBJECT_ID"] = "20" if year < 57 else "19" + line1[9:11] + "-" + line1[11:17].strip()
+    omm["EPOCH"] = _tle_epoch_to_iso(line1[18:32].strip())
+    omm["MEAN_MOTION_DOT"] = "0" + line1[33:43].strip()
+    omm["MEAN_MOTION_DDOT"] = _parse_exp(line1[44:52])
+    omm["BSTAR"] = _parse_exp(line1[53:61])
+    omm["EPHEMERIS_TYPE"] = line1[62:63].strip()
+    omm["ELEMENT_SET_NO"] = line1[64:68].strip()
+
+    # Line 2
+    omm["INCLINATION"] = line2[8:16].strip()
+    omm["RA_OF_ASC_NODE"] = line2[17:25].strip()
+    omm["ECCENTRICITY"] = "0." + line2[26:33].strip()
+    omm["ARG_OF_PERICENTER"] = line2[34:42].strip()
+    omm["MEAN_ANOMALY"] = line2[43:51].strip()
+    omm["MEAN_MOTION"] = line2[52:63].strip()
+    omm["REV_AT_EPOCH"] = line2[63:68].strip()
+
+    print("Converted TLE:\n{}\n{}\n{}\nto:\n{}".format(line0, line1, line2, omm))
+    return omm
+
+
+# Handles the input TLE/OMM in various formats.
+# Can be the TLE represented as a string with newlines
+# Can be the TLE as a list with 3 string items, each one being a line
+# Can be a dictionary containing the OMM in JSON format
 def massage_tle(tle):
     try:
-        # TLE may or may not have been split into lines already
+        # Handle TLE as a string by splitting it based on newlines
         if isinstance(tle, STR_TYPE):
             tle = tle.rstrip().split("\n")
-        assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
+        # Handle TLE as a list (whether split above, or passed in directly as a list)
+        if isinstance(tle, list):
+            assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
+            tle = tle_to_omm(tle[0], tle[1], tle[2])
+        # Handle OMM dictionary (potentially generated above from TLE)
+        if "NORAD_CAT_ID" in tle:   # TODO: More thorough check
+            pass
+        else:
+            raise PredictException()
         return tle
-        # TODO: print a warning if TLE is 'too' old
     except Exception as e:
         raise PredictException(e)
 
@@ -166,7 +230,7 @@ class Transit:
 
             # Find samples that form a hump
             for i in range(len(samples) - 2):
-                a, b, c = samples[i : i + 3]
+                a, b, c = samples[i: i + 3]
 
                 ae, be, ce = a["elevation"], b["elevation"], c["elevation"]
                 at, bt, ct = a["epoch"], b["epoch"], c["epoch"]
@@ -194,7 +258,7 @@ class Transit:
             """Interpolate between adjacent samples straddling the elevation target."""
 
             for i in range(len(samples) - 1):
-                a, b = samples[i : i + 2]
+                a, b = samples[i: i + 2]
 
                 if any(
                     abs(sample["elevation"] - elevation) <= tolerance

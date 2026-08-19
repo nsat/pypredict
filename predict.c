@@ -115,6 +115,11 @@
 #define VISIBLE_FLAG           0x002000
 #define SAT_ECLIPSED_FLAG      0x004000
 
+/* To allow for py2+py3 support */
+#ifndef PyString_AsString
+#define PyString_AsString PyUnicode_AsUTF8
+#endif
+
 // Python Extension Globals
 static PyObject *PredictException;
 static PyObject *NoTransitException;
@@ -161,8 +166,6 @@ typedef struct observation {
 } observation;
 
 struct	{
-	   char line1[70];       // First line of TLE
-	   char line2[70];       // Second line of TLE
 	   char name[25];        // Spacecraft Name
  	   long catnum;          // Catalog Number (a.k.a NORAD id)
 	   long setnum;          // Element Set No.
@@ -188,23 +191,6 @@ struct	{
 	   int stnalt;           // Observation Position Altitude
 	}  qth;
 
-// TODO: sat_db doesn't seem to be used much.  Verify it functions and annotate.
-struct	{  char name[25];
-	   long catnum;
-	   char squintflag;
-	   double alat;
-	   double alon;
-	   unsigned char transponders;
-	   char transponder_name[10][80];
-	   double uplink_start[10];
-	   double uplink_end[10];
-	   double downlink_start[10];
-	   double downlink_end[10];
-	   unsigned char dayofweek[10];
-	   int phase_start[10];
-	   int phase_end[10];
-	}  sat_db;
-
 /* Global variables for sharing data among functions... */
 
 double	tsince, jul_epoch, jul_utc, eclipse_depth=0,
@@ -217,14 +203,13 @@ double	tsince, jul_epoch, jul_utc, eclipse_depth=0,
 	sun_ra, sun_dec, sun_lat, sun_lon, sun_range, sun_range_rate,
 	moon_az, moon_el, moon_dx, moon_ra, moon_dec, moon_gha, moon_dv;
 
-char	qthfile[50], tlefile[50], dbfile[50], temp[80], output[25],
-	ephem[5], sat_sun_status, findsun, calc_squint;
+char temp[80], ephem[5], sat_sun_status, findsun;
 
 int	indx, iaz, iel, ma256, isplat, isplong, Flags=0;
 
 long	rv, irk;
 
-unsigned char val[256];
+unsigned char val[256] = { 0 };
 
 /** Type definitions **/
 
@@ -1647,7 +1632,7 @@ void SDP4(double tsince, tle_t * tle, vector_t * pos, vector_t * vel)
 	xlt, xmam, xmdf, xmx, xmy, xnoddf, xnodek, xll, a1, a3ovk2, ao, c2,
 	coef, coef1, x1m5th, xhdot1, del1, r, delo, eeta, eta, etasq,
 	perigee, psisq, tsi, qoms24, s4, pinvsq, temp, tempa, temp1,
-	temp2, temp3, temp4, temp5, temp6, bx, by, bz, cx, cy, cz;
+	temp2, temp3, temp4, temp5, temp6;
 
 	static deep_arg_t deep_arg;
 
@@ -1848,21 +1833,6 @@ void SDP4(double tsince, tle_t * tle, vector_t * pos, vector_t * vel)
 	vel->x=rdotk*ux+rfdotk*vx;
 	vel->y=rdotk*uy+rfdotk*vy;
 	vel->z=rdotk*uz+rfdotk*vz;
-
-	/* Calculations for squint angle begin here... */
-
-	if (calc_squint)
-	{
-		bx=cos(alat)*cos(alon+deep_arg.omgadf);
-		by=cos(alat)*sin(alon+deep_arg.omgadf);
-		bz=sin(alat);
-		cx=bx;
-		cy=by*cos(xinck)-bz*sin(xinck);
-		cz=by*sin(xinck)+bz*cos(xinck);
-		ax=cx*cos(xnodek)-cy*sin(xnodek);
-		ay=cx*sin(xnodek)+cy*cos(xnodek);
-		az=cz;
-	}
 
 	/* Phase in radians */
 	phase=xlt-deep_arg.xnode-deep_arg.omgadf+twopi;
@@ -2142,426 +2112,437 @@ void CopyString(char *source, char *destination, unsigned start, unsigned end)
 	}
 }
 
-char *Abbreviate(char *string, int n)
+int InternalUpdate(PyObject *omm)
 {
-	/* This function returns an abbreviated substring of the original,
-	   including a '~' character if a non-blank character is chopped
-	   out of the generated substring.  n is the length of the desired
-	   substring.  It is used for abbreviating satellite names. */
-
-	strncpy(temp,string,79);
-
-	if (temp[n]!=0 && temp[n]!=32)
-	{
-		temp[n-2]='~';
-		temp[n-1]=temp[strlen(temp)-1];
-	}
-
-	temp[n]=0;
-
-	return temp;
-}
-
-char KepCheck(const char *line1, const char *line2)
-{
-	/* This function scans line 1 and line 2 of a NASA 2-Line element
-	   set and returns a 1 if the element set appears to be valid or
-	   a 0 if it does not.  If the data survives this torture test,
-	   it's a pretty safe bet we're looking at a valid 2-line
-	   element set and not just some random text that might pass
-	   as orbital data based on a simple checksum calculation alone. */
-
-	int x;
-	unsigned sum1, sum2;
-
-	/* Compute checksum for each line */
-
-	for (x=0, sum1=0, sum2=0; x<=67; sum1+=val[(int)line1[x]], sum2+=val[(int)line2[x]], x++);
-
-	/* Perform a "torture test" on the data */
-
-	x=(val[(int)line1[68]]^(sum1%10)) | (val[(int)line2[68]]^(sum2%10)) |
-	  (line1[0]^'1')  | (line1[1]^' ')  | (line1[7]^'U')  |
-	  (line1[8]^' ')  | (line1[17]^' ') | (line1[23]^'.') |
-	  (line1[32]^' ') | (line1[34]^'.') | (line1[43]^' ') |
-	  (line1[52]^' ') | (line1[61]^' ') | (line1[62]^'0') |
-	  (line1[63]^' ') | (line2[0]^'2')  | (line2[1]^' ')  |
-	  (line2[7]^' ')  | (line2[11]^'.') | (line2[16]^' ') |
-	  (line2[20]^'.') | (line2[25]^' ') | (line2[33]^' ') |
-	  (line2[37]^'.') | (line2[42]^' ') | (line2[46]^'.') |
-	  (line2[51]^' ') | (line2[54]^'.') | (line1[2]^line2[2]) |
-	  (line1[3]^line2[3]) | (line1[4]^line2[4]) |
-	  (line1[5]^line2[5]) | (line1[6]^line2[6]) |
-	  (isdigit(line1[68]) ? 0 : 1) | (isdigit(line2[68]) ? 0 : 1) |
-	  (isdigit(line1[18]) ? 0 : 1) | (isdigit(line1[19]) ? 0 : 1) |
-	  (isdigit(line2[31]) ? 0 : 1) | (isdigit(line2[32]) ? 0 : 1);
-
-	return (x ? 0 : 1);
-}
-
-void InternalUpdate(void)
-{
-	/* Updates data in TLE structure based on
-	   line1 and line2 stored in structure. */
-
-	double tempnum;
-
-	strncpy(sat.designator,SubString(sat.line1,9,16),8);
-	sat.designator[9]=0;
-	sat.catnum=atol(SubString(sat.line1,2,6));
-	sat.year=atoi(SubString(sat.line1,18,19));
-	sat.refepoch=atof(SubString(sat.line1,20,31));
-	tempnum=1.0e-5*atof(SubString(sat.line1,44,49));
-	sat.nddot6=tempnum/pow(10.0,(sat.line1[51]-'0'));
-	tempnum=1.0e-5*atof(SubString(sat.line1,53,58));
-	sat.bstar=tempnum/pow(10.0,(sat.line1[60]-'0'));
-	sat.setnum=atol(SubString(sat.line1,64,67));
-	sat.incl=atof(SubString(sat.line2,8,15));
-	sat.raan=atof(SubString(sat.line2,17,24));
-	sat.eccn=1.0e-07*atof(SubString(sat.line2,26,32));
-	sat.argper=atof(SubString(sat.line2,34,41));
-	sat.meanan=atof(SubString(sat.line2,43,50));
-	sat.meanmo=atof(SubString(sat.line2,52,62));
-	sat.drag=atof(SubString(sat.line1,33,42));
-	sat.orbitnum=atof(SubString(sat.line2,63,67));
-}
-
-char *noradEvalue(double value)
-{
-	/* Converts numeric values to E notation used in NORAD TLEs */
-
-	char string[15];
-
-	sprintf(string,"%11.4e",value*10.0);
-
-	output[0]=string[0];
-	output[1]=string[1];
-	output[2]=string[3];
-	output[3]=string[4];
-	output[4]=string[5];
-	output[5]=string[6];
-	output[6]='-';
-	output[7]=string[10];
-	output[8]=0;
-
-	return output;
-}
-
-void Data2TLE(void)
-{
-	/* This function converts orbital data held in the numeric
-	   portion of the sat tle structure to ASCII TLE format,
-	   and places the result in ASCII portion of the structure. */
-
-	int i;
-	char string[15], line1[70], line2[70];
-	unsigned sum;
-
-	/* Fill lines with blanks */
-
-	for (i=0; i<70; line1[i]=32, line2[i]=32, i++);
-
-	line1[69]=0;
-	line2[69]=0;
-
-	/* Insert static characters */
-
-	line1[0]='1';
-	line1[7]='U'; /* Unclassified */
-	line2[0]='2';
-
-	line1[62]='0'; /* For publically released TLEs */
-
-	/* Insert orbital data */
-
-	sprintf(string,"%05ld",sat.catnum);
-	CopyString(string,line1,2,6);
-	CopyString(string,line2,2,6);
-
-	CopyString(sat.designator,line1,9,16);
-
-	sprintf(string,"%02d",sat.year);
-	CopyString(string,line1,18,19);
-
-	sprintf(string,"%12.8f",sat.refepoch);
-	CopyString(string,line1,20,32);
-
-	sprintf(string,"%.9f",fabs(sat.drag));
-
-	CopyString(string,line1,33,42);
-
-	if (sat.drag<0.0)
-	{
-		line1[33]='-';
-	}
-	else
-	{
-		line1[33]=32;
-	}
-
-	CopyString(noradEvalue(sat.nddot6),line1,44,51);
-	CopyString(noradEvalue(sat.bstar),line1,53,60);
-
-	sprintf(string,"%4lu",sat.setnum);
-	CopyString(string,line1,64,67);
-
-	sprintf(string,"%9.4f",sat.incl);
-	CopyString(string,line2,7,15);
-
-	sprintf(string,"%9.4f",sat.raan);
-	CopyString(string,line2,16,24);
-
-	sprintf(string,"%13.12f",sat.eccn);
-
-	/* Erase eccentricity's decimal point */
-
-	for (i=2; i<=9; string[i-2]=string[i], i++);
-
-	CopyString(string,line2,26,32);
-
-	sprintf(string,"%9.4f",sat.argper);
-	CopyString(string,line2,33,41);
-
-	sprintf(string,"%9.5f",sat.meanan);
-	CopyString(string,line2,43,50);
-
-	sprintf(string,"%12.9f",sat.meanmo);
-	CopyString(string,line2,52,62);
-
-	sprintf(string,"%5lu",sat.orbitnum);
-	CopyString(string,line2,63,67);
-
-	/* Compute and insert checksum for line 1 and line 2 */
-
-	for (i=0, sum=0; i<=67; sum+=val[(int)line1[i]], i++);
-
-	line1[68]=(sum%10)+'0';
-
-	for (i=0, sum=0; i<=67; sum+=val[(int)line2[i]], i++);
-
-	line2[68]=(sum%10)+'0';
-
-	line1[69]=0;
-	line2[69]=0;
-
-	strcpy(sat.line1,line1);
-	strcpy(sat.line2,line2);
-}
-
-double ReadBearing(char *input)
-{
-	/* This function takes numeric input in the form of a character
-	   string, and returns an equivalent bearing in degrees as a
-	   decimal number (double).  The input may either be expressed
-	   in decimal format (74.2467) or degree, minute, second
-	   format (74 14 48).  This function also safely handles
-	   extra spaces found either leading, trailing, or
-	   embedded within the numbers expressed in the
-	   input string.  Decimal seconds are permitted. */
-
-	char string[20];
-	double bearing=0.0, seconds;
-	int a, b, length, degrees, minutes;
-
-	/* Copy "input" to "string", and ignore any extra
-	   spaces that might be present in the process. */
-
-	string[0]=0;
-	length=strlen(input);
-
-	for (a=0, b=0; a<length && a<18; a++)
-	{
-		if ((input[a]!=32 && input[a]!='\n') || (input[a]==32 && input[a+1]!=32 && b!=0))
-		{
-			string[b]=input[a];
-			b++;
-		}
-	}
-
-	string[b]=0;
-
-	/* Count number of spaces in the clean string. */
-
-	length=strlen(string);
-
-	for (a=0, b=0; a<length; a++)
-	{
-		if (string[a]==32)
-		{
-			b++;
-		}
-	}
-
-	if (b==0)  /* Decimal Format (74.2467) */
-	{
-		sscanf(string,"%lf",&bearing);
-	}
-
-	if (b==2)  /* Degree, Minute, Second Format (74 14 48) */
-	{
-		sscanf(string,"%d %d %lf",&degrees, &minutes, &seconds);
-
-		if (degrees<0.0)
-		{
-			minutes=-minutes;
-			seconds=-seconds;
-		}
-
-		bearing=(double)degrees+((double)minutes/60)+(seconds/3600);
-	}
-
-	/* Bizarre results return a 0.0 */
-
-	if (bearing>360.0 || bearing<-360.0)
-	{
-		bearing=0.0;
-	}
-
-	return bearing;
-}
-
-char ReadTLE(const char *line0, const char *line1, const char *line2)
-{
-	unsigned int la, lb, lc;
-	char error_flags,a,b,c,d;
-
-	la = strnlen(line0,sizeof(sat.name));
-	lb = strnlen(line1,sizeof(sat.line1));
-	lc = strnlen(line2,sizeof(sat.line2));
-	a = ((la == 0) || (la >= sizeof(sat.name)));
-	b = ((lb == 0) || (lb >= sizeof(sat.line1)));
-	c = ((lc == 0) || (lc >= sizeof(sat.line2)));
-	d = !KepCheck(line1, line2);
-	error_flags = (a << 3) | (b << 2) | (c << 1) | (d << 0);
-
-	if (error_flags == 0)
-	{
-		strncpy(sat.name,line0,sizeof(sat.name)-1);
-		strncpy(sat.line1,line1,sizeof(sat.line1)-1);
-		strncpy(sat.line2,line2,sizeof(sat.line2)-1);
-		InternalUpdate();
-	}
-
-	return error_flags;
-}
-
-char ReadQTH(double lat, double lon, long alt)
-{
-	//TODO: add sanity checks
-	qth.stnlat = lat;
-	qth.stnlong = lon;
-	qth.stnalt = alt;
-
-	obs_geodetic.lat=qth.stnlat*deg2rad;
-	obs_geodetic.lon=-qth.stnlong*deg2rad;
-	obs_geodetic.alt=((double)qth.stnalt)/1000.0;
-	obs_geodetic.theta=0.0;
-
-	return 0;
-}
-
-
-char ReadQTHFile(void)
-{
-	FILE *fd;
-
-	fd=fopen(qthfile,"r");
-	if (fd!=NULL)
-	{
-		fgets(qth.callsign,16,fd);
-		qth.callsign[strlen(qth.callsign)-1]=0;
-		fscanf(fd,"%lf", &qth.stnlat);
-		fscanf(fd,"%lf", &qth.stnlong);
-		fscanf(fd,"%d", &qth.stnalt);
-		fclose(fd);
-
-		obs_geodetic.lat=qth.stnlat*deg2rad;
-		obs_geodetic.lon=-qth.stnlong*deg2rad;
-		obs_geodetic.alt=((double)qth.stnalt)/1000.0;
-		obs_geodetic.theta=0.0;
-		return 0;
-	}
-	return -1;
-}
-
-char CopyFile(char *source, char *destination)
-{
-	/* This function copies file "source" to file "destination"
-	   in 64k chunks.  The permissions on the destination file
-	   are set to rw-r--r--  (0644).  A 0 is returned if no
-	   errors are encountered.  A 1 indicates a problem writing
-	   to the destination file.  A 2 indicates a problem reading
-	   the source file.  */
-
-	int x, sd, dd;
-	char error=0, buffer[65536];
-
-	sd=open(source,O_RDONLY);
-
-	if (sd!=-1)
-	{
-		dd=open(destination,O_WRONLY | O_CREAT| O_TRUNC, 0644);
-
-		if (dd!=-1)
-		{
-			x=read(sd,&buffer,65536);
-
-			while (x)
-			{
-				write(dd,&buffer,x);
-				x=read(sd,&buffer,65536);
-			}
-
-			close(dd);
-		}
-		else
-		{
-			error=1;
-		}
-
-		close(sd);
-	}
-	else
-	{
-		error+=2;
-	}
-
-	return error;
-}
-
-void SaveQTH(void)
-{
-	/* This function saves QTH data to the QTH data file. */
-
-	FILE *fd;
-
-	fd=fopen(qthfile,"w");
-
-	fprintf(fd,"%s\n",qth.callsign);
-	fprintf(fd," %g\n",qth.stnlat);
-	fprintf(fd," %g\n",qth.stnlong);
-	fprintf(fd," %d\n",qth.stnalt);
-
-	fclose(fd);
-}
-
-void SaveTLE(void)
-{
-	FILE *fd;
-
- 	/* Save orbital data to tlefile */
-
-	fd=fopen(tlefile,"w");
-
-	Data2TLE();
-
-	/* Write name, line1, line2 to predict.tle */
-
-	fprintf(fd,"%s\n", sat.name);
-	fprintf(fd,"%s\n", sat.line1);
-	fprintf(fd,"%s\n", sat.line2);
-
-	fclose(fd);
+	/* Updates data in sat structure based on OMM dict provided */
+    PyObject *item;
+    const char *item_str;
+
+    item = PyDict_GetItemString(omm, "OBJECT_NAME");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            strncpy(sat.name, item_str, sizeof(sat.name));
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: OBJECT_NAME");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: OBJECT_NAME");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "NORAD_CAT_ID");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.catnum = atol(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: NORAD_CAT_ID");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: NORAD_CAT_ID");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "OBJECT_ID");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            strncpy(sat.designator, item_str+2, 2);
+            strncpy(sat.designator+2, item_str+5, 6);
+            sat.designator[9] = 0;
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: OBJECT_ID");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: OBJECT_ID");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "EPOCH");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            int year = 0;
+            int month = 0;
+            int day = 0;
+            int hour = 0;
+            int minutes = 0;
+            double seconds = 0.0;
+
+            if (sscanf(item_str, "%d-%d-%dT%d:%d:%lf", &year, &month, &day, &hour, &minutes, &seconds) == 6) {
+                // Date in YYYY-mm-dd format
+                sat.year = year % 100;
+                sat.refepoch = DOY(year, month, day) + Fraction_of_Day(hour, minutes, seconds);
+            } else if (sscanf(item_str, "%d-%dT%d:%d:%lf", &year, &day, &hour, &minutes, &seconds) == 5) {
+                // Date in YYYY-ddd format
+                sat.year = year % 100;
+                sat.refepoch = day + Fraction_of_Day(hour, minutes, seconds);
+            } else {
+                // Date not parseable
+			    PyErr_SetString(PredictException, "Failed to parse EPOCH as date");
+                return -1;
+            }
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: EPOCH");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: EPOCH");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_MOTION_DDOT");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.nddot6 = atof(item_str);    // TODO: Need to div6?
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION_DDOT");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_MOTION_DDOT");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "BSTAR");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.bstar = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: BSTAR");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: BSTAR");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "ELEMENT_SET_NO");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.setnum = atol(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ELEMENT_SET_NO");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: ELEMENT_SET_NO");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "INCLINATION");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.incl = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: INCLINATION");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: INCLINATION");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "RA_OF_ASC_NODE");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.raan = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: RA_OF_ASC_NODE");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: RA_OF_ASC_NODE");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "ECCENTRICITY");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.eccn = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ECCENTRICITY");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: ECCENTRICITY");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "ARG_OF_PERICENTER");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.argper = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ARG_OF_PERICENTER");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: ARG_OF_PERICENTER");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_ANOMALY");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.meanan = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_ANOMALY");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_ANOMALY");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_MOTION");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.meanmo = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_MOTION");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_MOTION_DOT");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.drag = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION_DOT");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_MOTION_DOT");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "REV_AT_EPOCH");
+    if (item) {
+        item_str = PyString_AsString(item);
+        if (item_str) {
+            sat.orbitnum = atof(item_str);
+        } else {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: REV_AT_EPOCH");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: REV_AT_EPOCH");
+        return -1;
+    }
+/*
+    item = PyDict_GetItemString(omm, "NORAD_CAT_ID");
+    if (item) {
+        sat.catnum = PyLong_AsLong(item);
+        if (sat.catnum == -1) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: NORAD_CAT_ID");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: NORAD_CAT_ID");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "OBJECT_ID");
+    if (item) {
+        item_str = PyBytes_AsString(item);
+        if (!item_str) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: OBJECT_ID");
+            return -1;
+        } else {
+            strncpy(sat.designator, item_str+2, 2);
+            strncpy(sat.designator+2, item_str+5, 6);
+            sat.designator[9] = 0;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: OBJECT_ID");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "EPOCH");
+    if (item) {
+        item_str = PyBytes_AsString(item);
+        if (!item_str) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: EPOCH");
+            return -1;
+        } else {
+            int year = 0;
+            int month = 0;
+            int day = 0;
+            int hour = 0;
+            int minutes = 0;
+            double seconds = 0.0;
+
+            if (sscanf(item_str, "%d-%d-%dT%d:%d:%lf", &year, &month, &day, &hour, &minutes, &seconds) == 6) {
+                // Date in YYYY-mm-dd format
+                sat.year = year % 100;
+                sat.refepoch = DOY(year, month, day) + Fraction_of_Day(hour, minutes, seconds);
+            } else if (sscanf(item_str, "%d-%dT%d:%d:%lf", &year, &day, &hour, &minutes, &seconds) == 5) {
+                // Date in YYYY-ddd format
+                sat.year = year % 100;
+                sat.refepoch = day + Fraction_of_Day(hour, minutes, seconds);
+            } else {
+                // Date not parseable
+			    PyErr_SetString(PredictException, "Failed to parse EPOCH as date");
+                return -1;
+            }
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: EPOCH");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_MOTION_DDOT");
+    if (item) {
+        sat.nddot6 = PyFloat_AsDouble(item);    // TODO: Need to div6?
+        if (sat.nddot6 == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION_DDOT");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_MOTION_DDOT");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "BSTAR");
+    if (item) {
+        sat.bstar = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.bstar == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: BSTAR");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: BSTAR");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "ELEMENT_SET_NO");
+    if (item) {
+        sat.setnum = PyLong_AsLong(item);
+        if (sat.setnum == -1) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ELEMENT_SET_NO");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: ELEMENT_SET_NO");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "INCLINATION");
+    if (item) {
+        sat.incl = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.incl == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: INCLINATION");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: INCLINATION");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "RA_OF_ASC_NODE");
+    if (item) {
+        sat.raan = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.raan == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: RA_OF_ASC_NODE");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: RA_OF_ASC_NODE");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "ECCENTRICITY");
+    if (item) {
+        sat.eccn = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.eccn == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ECCENTRICITY");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: ECCENTRICITY");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "ARG_OF_PERICENTER");
+    if (item) {
+        sat.argper = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.argper == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ARG_OF_PERICENTER");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: ARG_OF_PERICENTER");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_ANOMALY");
+    if (item) {
+        sat.meanan = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.meanan == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_ANOMALY");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_ANOMALY");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_MOTION");
+    if (item) {
+        sat.meanmo = PyFloat_AsDouble(item);      // TODO: Convertion needed?
+        if (sat.meanmo == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_MOTION");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "MEAN_MOTION_DOT");
+    if (item) {
+        sat.drag = PyFloat_AsDouble(item);    // TODO: Need to convert the value?
+        if (sat.drag == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION_DOT");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: MEAN_MOTION_DOT");
+        return -1;
+    }
+
+    item = PyDict_GetItemString(omm, "REV_AT_EPOCH");
+    if (item) {
+        sat.orbitnum = PyFloat_AsDouble(item);    // TODO: Need to convert the value?
+        if (sat.orbitnum == -1.0) {
+			PyErr_SetString(PredictException, "Failed to parse OMM parameters: REV_AT_EPOCH");
+            return -1;
+        }
+    } else {
+		PyErr_SetString(PredictException, "Failed to find OMM parameters: REV_AT_EPOCH");
+        return -1;
+    }
+*/
+    return 0;
 }
 
 long DayNum(int m, int d, int y)
@@ -2860,17 +2841,6 @@ void PreCalc(void)
 	tle.xno=sat.meanmo;
 	tle.revnum=sat.orbitnum;
 
-	if (sat_db.squintflag)
-	{
-		calc_squint=1;
-		alat=deg2rad*sat_db.alat;
-		alon=deg2rad*sat_db.alon;
-	}
-	else
-	{
-		calc_squint=0;
-	}
-
 	/* Clear all flags */
 
 	ClearFlag(ALL_FLAGS);
@@ -2974,13 +2944,6 @@ void Calc(void)
 	/* Calculate satellite Lat North, Lon East and Alt. */
 
 	Calculate_LatLonAlt(jul_utc, &pos, &sat_geodetic);
-
-	/* Calculate squint angle */
-
-	if (calc_squint)
-	{
-		squint=(acos(-(ax*rx+ay*ry+az*rz)/obs_set.z))/deg2rad;
-	}
 
 	/* Calculate solar position and satellite eclipse depth. */
 	/* Also set or clear the satellite eclipsed flag accordingly. */
@@ -3239,12 +3202,6 @@ int MakeObservation(double obs_time, struct observation * obs) {
     PreCalc();
     indx=0;
 
-    if (sat_db.transponders>0)
-    {
-        PyErr_SetString(PredictException, "pypredict does not support transponder definition.");
-        return -1;
-    }
-
     daynum=obs_time;
     aoshappens=AosHappens();
     geostationary=Geostationary();
@@ -3396,61 +3353,22 @@ PyObject * PythonifyObservation(observation * obs) {
 char load(PyObject *args)
 {
 	//TODO: Not threadsafe, detect and raise warning?
-	int x;
 	char *env=NULL;
-
-	/* Set up translation table for computing TLE checksums */
-	for (x=0; x<=255; val[x]=0, x++);
-	for (x='0'; x<='9'; val[x]=x-'0', x++);
-
-	val['-']=1;
-
 	double epoch;
-	const char *tle0, *tle1, *tle2;
+    PyObject *omm = NULL;
 
-	if (!PyArg_ParseTuple(args, "(sss)|d(ddi)",
-		&tle0, &tle1, &tle2, &epoch, &qth.stnlat, &qth.stnlong, &qth.stnalt))
-	{
-		// PyArg_ParseTuple will set appropriate exception string
-		return -1;
-	};
+    if (PyArg_ParseTuple(args, "Od(ddi)", &omm, &epoch, &qth.stnlat, &qth.stnlong, &qth.stnalt)) {
+        if (InternalUpdate(omm) == -1) {
+            // InternalUpdate will set appropriate exception string
+            return -1;
+        }
+    } else {
+        // PyArg_ParseTuple will set appropriate exception string
+        return -1;
+    }
 
-	if (ReadTLE(tle0,tle1,tle2) != 0)
-	{
-		PyErr_SetString(PredictException, "Unable to process TLE");
-		return -1;
-	}
+    daynum=((epoch/86400.0)-3651.0);
 
-	// If time isn't set, use current time.
-	if (PyObject_Length(args) < 2)
-	{
-		daynum=CurrentDaynum();
-	}
-	else
-	{
-		daynum=((epoch/86400.0)-3651.0);
-	}
-
-	// If we haven't already set groundstation location, use predict's default.
-	if (PyObject_Length(args) < 3)
-	{
-		FILE *fd;
-		env=getenv("HOME");
-		sprintf(qthfile,"%s/.predict/predict.qth",env);
-		fd=fopen(qthfile,"r");
-		if (fd!=NULL)
-		{
-			fgets(qth.callsign,16,fd);
-			qth.callsign[strlen(qth.callsign)-1]=0;
-			fscanf(fd,"%lf", &qth.stnlat);
-			fscanf(fd,"%lf", &qth.stnlong);
-			fscanf(fd,"%d", &qth.stnalt);
-			fclose(fd);
-		} else {
-			PyErr_SetString(PredictException, "QTH file could not be loaded.");
-			return -1;
-		}
-	}
 	obs_geodetic.lat=qth.stnlat*deg2rad;
 	obs_geodetic.lon=-qth.stnlong*deg2rad;
 	obs_geodetic.alt=((double)qth.stnalt)/1000.0;
@@ -3474,7 +3392,7 @@ static PyObject* quick_find(PyObject* self, PyObject *args)
 }
 
 static char quick_find_docs[] =
-    "quick_find((tle_line0, tle_line1, tle_line2), time, (gs_lat, gs_lon, gs_alt))\n";
+    "quick_find(omm, time, (gs_lat, gs_lon, gs_alt))\n";
 
 static PyObject* quick_predict(PyObject* self, PyObject *args)
 {
@@ -3604,7 +3522,7 @@ cleanup_and_raise_exception:
 }
 
 static char quick_predict_docs[] =
-    "quick_predict((tle_line0, tle_line1, tle_line2), time, (gs_lat, gs_lon, gs_alt))\n";
+    "quick_predict(omm, time, (gs_lat, gs_lon, gs_alt))\n";
 
 static PyMethodDef pypredict_funcs[] = {
     {"quick_find"   , (PyCFunction)quick_find   , METH_VARARGS, quick_find_docs},

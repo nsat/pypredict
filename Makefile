@@ -12,8 +12,8 @@ wheels := \
 	dist/$(NAME)-$(VERSION)-cp311-cp311-$(ARCH).whl \
 	dist/$(NAME)-$(VERSION)-cp312-cp312-$(ARCH).whl \
 	dist/$(NAME)-$(VERSION)-cp313-cp313-$(ARCH).whl \
-	dist/$(NAME)-$(VERSION)-cp313-cp314-$(ARCH).whl \
-	dist/$(NAME)-$(VERSION)-cp313-cp314t-$(ARCH).whl
+	dist/$(NAME)-$(VERSION)-cp314-cp314-$(ARCH).whl \
+	dist/$(NAME)-$(VERSION)-cp314-cp314t-$(ARCH).whl
 
 .PHONY: help
 help:
@@ -56,7 +56,7 @@ install: build
 
 .PHONY: test
 test:
-	pytest
+	python3 -m pytest
 
 .PHONY: upload
 upload: build
