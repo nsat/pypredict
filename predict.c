@@ -116,8 +116,11 @@
 #define SAT_ECLIPSED_FLAG      0x004000
 
 /* To allow for py2+py3 support */
-#ifndef PyString_AsString
+#if PY_MAJOR_VERSION >= 3
 #define PyString_AsString PyUnicode_AsUTF8
+#define CHAR_STR_C        "C"
+#else
+#define CHAR_STR_C        "c"
 #endif
 
 // Python Extension Globals
@@ -3094,7 +3097,7 @@ void PrintObservation(struct observation * obs) {
 
 PyObject * PythonifyObservation(observation * obs) {
 	//TODO: Add reference count?
-	return Py_BuildValue("{s:l,s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:s,s:c,s:i,s:l,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d}",
+	return Py_BuildValue("{s:l,s:s,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:s,s:" CHAR_STR_C ",s:i,s:l,s:i,s:i,s:i,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d,s:d}",
 		"norad_id", obs->norad_id,
 		"name", obs->name,
 		"epoch", obs->epoch,

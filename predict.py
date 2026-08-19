@@ -1,7 +1,7 @@
 import sys
 import time
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from collections import namedtuple
 from copy import copy
@@ -42,7 +42,7 @@ def _tle_epoch_to_iso(epoch_str):
     year += 2000 if year < 57 else 1900
     day_of_year = float(epoch_str[2:])
 
-    dt = datetime(year, 1, 1, tzinfo=timezone.utc) + timedelta(days=day_of_year - 1)
+    dt = datetime(year, 1, 1) + timedelta(days=day_of_year - 1)
     # Format with microsecond precision, trimmed
     return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
