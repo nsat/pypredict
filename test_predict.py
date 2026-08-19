@@ -26,7 +26,7 @@ OMM = {
     "REV_AT_EPOCH": 58151,
     "BSTAR": 0.00019587255,
     "MEAN_MOTION_DOT": 0.00010553,
-    "MEAN_MOTION_DDOT": 0
+    "MEAN_MOTION_DDOT": 0,
 }
 
 QTH = (0.033889, 51.066389, 0.0)  # Macapa, Brazil
@@ -65,6 +65,7 @@ def test_predict_of_tle_older_than_a_year():
     # Should raise a PredictException
     with pytest.raises(PredictException) as e_info:
         predict.quick_predict(TLE, T2_AFTER_A_YEAR, QTH)
+
 
 def test_predict_using_omm():
     # Test running predict using OMM instead of TLE as an input
