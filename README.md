@@ -132,6 +132,38 @@ predict.quick_find(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 predict.quick_predict(tle.split('\n'), time.time(), (37.7727, 122.407, 25))
 ```
 
+#### OMM support
+
+Since version 2.0.0, support for the OMM format has been added, allowing the satellite orbital elements to be
+provided a JSON-style format that handles NORAD ID's greater than 5 characters, and with less limits to
+precision. Anywhere that a TLE is provided in the examples above, instead a python dictionary containing the
+OMM data as described in the CCSDS blue book 502.0-B-3 can be provided. For example:
+
+```python
+omm = {
+  "OBJECT_NAME": "ISS (ZARYA)",
+  "OBJECT_ID": "1998-067A",
+  "EPOCH": "2026-08-19T03:31:32.932416",
+  "MEAN_MOTION": 15.49503867,
+  "ECCENTRICITY": 0.00076624,
+  "INCLINATION": 51.6332,
+  "RA_OF_ASC_NODE": 348.4866,
+  "ARG_OF_PERICENTER": 61.8697,
+  "MEAN_ANOMALY": 298.3065,
+  "EPHEMERIS_TYPE": 0,
+  "CLASSIFICATION_TYPE": "U",
+  "NORAD_CAT_ID": 25544,
+  "ELEMENT_SET_NO": 999,
+  "REV_AT_EPOCH": 58151,
+  "BSTAR": 0.00019587255,
+  "MEAN_MOTION_DOT": 0.00010553,
+  "MEAN_MOTION_DDOT": 0
+}
+
+predict.quick_predict(omm, time.time(), (37.7727, 122.407, 25))
+```
+
+
 ## API
 <pre>
 <b>observe</b>(<i>tle, qth[, at=None]</i>)  
