@@ -2134,10 +2134,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "NORAD_CAT_ID");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.catnum = atol(item_str);
-        } else {
+        sat.catnum = PyLong_AsLong(item);
+        if (sat.catnum == -1) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: NORAD_CAT_ID");
             return -1;
         }
@@ -2197,10 +2195,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "MEAN_MOTION_DDOT");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.nddot6 = atof(item_str);
-        } else {
+        sat.nddot6 = PyFloat_AsDouble(item);
+        if (sat.nddot6 == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION_DDOT");
             return -1;
         }
@@ -2211,10 +2207,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "BSTAR");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.bstar = atof(item_str);
-        } else {
+        sat.bstar = PyFloat_AsDouble(item);
+        if (sat.bstar == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: BSTAR");
             return -1;
         }
@@ -2225,10 +2219,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "ELEMENT_SET_NO");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.setnum = atol(item_str);
-        } else {
+        sat.setnum = PyLong_AsLong(item);
+        if (sat.setnum == -1) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ELEMENT_SET_NO");
             return -1;
         }
@@ -2239,10 +2231,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "INCLINATION");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.incl = atof(item_str);
-        } else {
+        sat.incl = PyFloat_AsDouble(item);
+        if (sat.incl == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: INCLINATION");
             return -1;
         }
@@ -2253,10 +2243,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "RA_OF_ASC_NODE");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.raan = atof(item_str);
-        } else {
+        sat.raan = PyFloat_AsDouble(item);
+        if (sat.raan == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: RA_OF_ASC_NODE");
             return -1;
         }
@@ -2267,10 +2255,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "ECCENTRICITY");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.eccn = atof(item_str);
-        } else {
+        sat.eccn = PyFloat_AsDouble(item);
+        if (sat.eccn == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ECCENTRICITY");
             return -1;
         }
@@ -2281,10 +2267,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "ARG_OF_PERICENTER");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.argper = atof(item_str);
-        } else {
+        sat.argper = PyFloat_AsDouble(item);
+        if (sat.argper == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: ARG_OF_PERICENTER");
             return -1;
         }
@@ -2295,10 +2279,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "MEAN_ANOMALY");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.meanan = atof(item_str);
-        } else {
+        sat.meanan = PyFloat_AsDouble(item);
+        if (sat.meanan == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_ANOMALY");
             return -1;
         }
@@ -2309,10 +2291,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "MEAN_MOTION");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.meanmo = atof(item_str);
-        } else {
+        sat.meanmo = PyFloat_AsDouble(item);
+        if (sat.meanmo == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION");
             return -1;
         }
@@ -2323,10 +2303,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "MEAN_MOTION_DOT");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.drag = atof(item_str);
-        } else {
+        sat.drag = PyFloat_AsDouble(item);
+        if (sat.drag == -1.0) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: MEAN_MOTION_DOT");
             return -1;
         }
@@ -2337,10 +2315,8 @@ int InternalUpdate(PyObject *omm)
 
     item = PyDict_GetItemString(omm, "REV_AT_EPOCH");
     if (item) {
-        item_str = PyString_AsString(item);
-        if (item_str) {
-            sat.orbitnum = atof(item_str);
-        } else {
+        sat.orbitnum = PyLong_AsLong(item);
+        if (sat.orbitnum == -1) {
 			PyErr_SetString(PredictException, "Failed to parse OMM parameters: REV_AT_EPOCH");
             return -1;
         }

@@ -39,7 +39,7 @@ def _checksum(line):
 
 def _tle_epoch_to_iso(epoch_str):
     year = int(epoch_str[:2])
-    year += 2000 if year < 57 else 1900   # standard TLE pivot year
+    year += 2000 if year < 57 else 1900
     day_of_year = float(epoch_str[2:])
 
     dt = datetime(year, 1, 1, tzinfo=timezone.utc) + timedelta(days=day_of_year - 1)
@@ -54,7 +54,7 @@ def _parse_exp(field):
     return "0." + field
 
 
-def tle_to_omm(line0, line1, line2):
+def _tle_to_omm(line0, line1, line2):
     omm = {}
 
     assert line1[0:1] == "1", "TLE Line 1 does not start with 1"
@@ -86,7 +86,6 @@ def tle_to_omm(line0, line1, line2):
     omm["MEAN_MOTION"] = line2[52:63].strip()
     omm["REV_AT_EPOCH"] = line2[63:68].strip()
 
-    print("Converted TLE:\n{}\n{}\n{}\nto:\n{}".format(line0, line1, line2, omm))
     return omm
 
 
@@ -102,9 +101,36 @@ def massage_tle(tle):
         # Handle TLE as a list (whether split above, or passed in directly as a list)
         if isinstance(tle, list):
             assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
-            tle = tle_to_omm(tle[0], tle[1], tle[2])
+            tle = _tle_to_omm(tle[0], tle[1], tle[2])
         # Handle OMM dictionary (potentially generated above from TLE)
         if "NORAD_CAT_ID" in tle:
+            # Handle stringified values
+            if isinstance(tle["NORAD_CAT_ID"], STR_TYPE):
+                tle["NORAD_CAT_ID"] = int(tle["NORAD_CAT_ID"])
+            if isinstance(tle["MEAN_MOTION_DOT"], STR_TYPE):
+                tle["MEAN_MOTION_DOT"] = float(tle["MEAN_MOTION_DOT"])
+            if isinstance(tle["MEAN_MOTION_DDOT"], STR_TYPE):
+                tle["MEAN_MOTION_DDOT"] = float(tle["MEAN_MOTION_DDOT"])
+            if isinstance(tle["BSTAR"], STR_TYPE):
+                tle["BSTAR"] = float(tle["BSTAR"])
+            if isinstance(tle["ELEMENT_SET_NO"], STR_TYPE):
+                tle["ELEMENT_SET_NO"] = int(tle["ELEMENT_SET_NO"])
+            if isinstance(tle["INCLINATION"], STR_TYPE):
+                tle["INCLINATION"] = float(tle["INCLINATION"])
+            if isinstance(tle["RA_OF_ASC_NODE"], STR_TYPE):
+                tle["RA_OF_ASC_NODE"] = float(tle["RA_OF_ASC_NODE"])
+            if isinstance(tle["ECCENTRICITY"], STR_TYPE):
+                tle["ECCENTRICITY"] = float(tle["ECCENTRICITY"])
+            if isinstance(tle["ARG_OF_PERICENTER"], STR_TYPE):
+                tle["ARG_OF_PERICENTER"] = float(tle["ARG_OF_PERICENTER"])
+            if isinstance(tle["EPHEMERIS_TYPE"], STR_TYPE):
+                tle["EPHEMERIS_TYPE"] = int(tle["EPHEMERIS_TYPE"])
+            if isinstance(tle["MEAN_ANOMALY"], STR_TYPE):
+                tle["MEAN_ANOMALY"] = float(tle["MEAN_ANOMALY"])
+            if isinstance(tle["MEAN_MOTION"], STR_TYPE):
+                tle["MEAN_MOTION"] = float(tle["MEAN_MOTION"])
+            if isinstance(tle["REV_AT_EPOCH"], STR_TYPE):
+                tle["REV_AT_EPOCH"] = int(tle["REV_AT_EPOCH"])
             pass
         else:
             raise PredictException()
