@@ -104,7 +104,7 @@ def massage_tle(tle):
             assert len(tle) == 3, "TLE must be 3 lines, not %d: %s" % (len(tle), tle)
             tle = tle_to_omm(tle[0], tle[1], tle[2])
         # Handle OMM dictionary (potentially generated above from TLE)
-        if "NORAD_CAT_ID" in tle:   # TODO: More thorough check
+        if "NORAD_CAT_ID" in tle:
             pass
         else:
             raise PredictException()
