@@ -48,10 +48,7 @@ def _tle_epoch_to_iso(epoch_str):
 
 
 def _parse_exp(field):
-    field = field.strip()
-    field = field.replace("-", "e-")
-    field = field.replace("+", "e+")
-    return "0." + field
+    return field.strip().replace("-", "e-").replace("+", "e+")
 
 
 def _tle_to_omm(line0, line1, line2):
@@ -67,22 +64,22 @@ def _tle_to_omm(line0, line1, line2):
 
     # Line 1
     omm["NORAD_CAT_ID"] = line1[2:7].strip()
-    omm["CLASSIFICATION_TYPE"] = line1[7:8].strip()
+    omm["CLASSIFICATION_TYPE"] = line1[7] or "U"
     year = int(line1[9:11])
     omm["OBJECT_ID"] = (
         "20" if year < 57 else "19" + line1[9:11] + "-" + line1[11:17].strip()
     )
     omm["EPOCH"] = _tle_epoch_to_iso(line1[18:32].strip())
-    omm["MEAN_MOTION_DOT"] = "0" + line1[33:43].strip()
-    omm["MEAN_MOTION_DDOT"] = _parse_exp(line1[44:52])
-    omm["BSTAR"] = _parse_exp(line1[53:61])
+    omm["MEAN_MOTION_DOT"] =  str(float(line1[33:43].strip()))
+    omm["MEAN_MOTION_DDOT"] = str(float(line1[44] + '.' + _parse_exp(line1[45:52])))
+    omm["BSTAR"] = str(float(line1[53] + '.' + _parse_exp(line1[54:61])))
     omm["EPHEMERIS_TYPE"] = line1[62:63].strip()
     omm["ELEMENT_SET_NO"] = line1[64:68].strip()
 
     # Line 2
     omm["INCLINATION"] = line2[8:16].strip()
     omm["RA_OF_ASC_NODE"] = line2[17:25].strip()
-    omm["ECCENTRICITY"] = "0." + line2[26:33].strip()
+    omm["ECCENTRICITY"] = "0." + line2[26:33].replace(' ', '0')
     omm["ARG_OF_PERICENTER"] = line2[34:42].strip()
     omm["MEAN_ANOMALY"] = line2[43:51].strip()
     omm["MEAN_MOTION"] = line2[52:63].strip()
